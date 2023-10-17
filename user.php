@@ -16,19 +16,24 @@ defined('ACTION_WRITE_REPLY_TO_USER') or define('ACTION_WRITE_REPLY_TO_USER', 10
 defined('ACTION_ADD_ADMIN') or define('ACTION_ADD_ADMIN', 11);
 defined('ACTION_ASSIGN_USER_NAME') or define('ACTION_ASSIGN_USER_NAME', 12);
 defined('ACTION_SET_BOOKLET_CAPTION') or define('ACTION_SET_BOOKLET_CAPTION', 13);
+defined('ACTION_EDIT_BOOKLET_CAPTION') or define('ACTION_EDIT_BOOKLET_CAPTION', 14);
+defined('ACTION_SELECT_BOOKLET_TO_EDIT') or define('ACTION_SELECT_BOOKLET_TO_EDIT', 15);
+defined('ACTION_EDIT_BOOKLET_FILE') or define('ACTION_EDIT_BOOKLET_FILE', 17);
+defined('ACTION_SEND_POST_TO_CHANNEL') or define('ACTION_SEND_POST_TO_CHANNEL', 16);
 
-function getSuperiors() {
+function getSuperiors(): ?array
+{
     // get admin and gods
     return Database::getInstance()->query('SELECT * FROM '. DB_TABLE_USERS 
         .' WHERE ' . DB_USER_MODE . '=' . GOD_USER . ' OR ' . DB_USER_MODE . '=' . ADMIN_USER);
 }
 
-function getCertainUsers($user_mode) {
-    $user = Database::getInstance()->query('SELECT * FROM '. DB_TABLE_USERS 
+function getCertainUsers(int $user_mode): ?array {
+    return Database::getInstance()->query('SELECT * FROM '. DB_TABLE_USERS 
         .' WHERE ' . DB_USER_MODE . '=:mode', array('mode' => $user_mode));
 }
 
-function getUser($id) {
+function getUser($id): array{
     $db = Database::getInstance();
     $user = $db->query('SELECT * FROM '. DB_TABLE_USERS .' WHERE ' . DB_USER_ID . '=:id LIMIT 1', 
         array('id' => $id));
@@ -43,7 +48,7 @@ function getUser($id) {
     return array(DB_USER_ID => $id, DB_USER_MODE => NORMAL_USER, DB_USER_ACTION => ACTION_NONE, DB_USER_ACTION_CACHE => null);
 }
 
-function updateAction($id, $action, $reset_cache = false) {
+function updateAction($id, int $action, bool $reset_cache = false) {
     $query = 'UPDATE ' . DB_TABLE_USERS . ' SET ' . DB_USER_ACTION . '=:action';
     if($reset_cache)
         $query .= ', ' . DB_USER_ACTION_CACHE . '=NULL';
@@ -52,7 +57,7 @@ function updateAction($id, $action, $reset_cache = false) {
 }
 
 
-function updateUserMode($id, $mode) {
+function updateUserMode($id, int $mode) {
     return Database::getInstance()->update('UPDATE ' . DB_TABLE_USERS . ' SET ' . DB_USER_MODE . '=:mode WHERE ' . DB_USER_ID . '=:id',
         array('id' => $id, 'mode' => $mode));
 }
@@ -60,6 +65,12 @@ function updateUserMode($id, $mode) {
 function updateActionCache($id, $cache) {
     return Database::getInstance()->update('UPDATE ' . DB_TABLE_USERS . ' SET ' . DB_USER_ACTION_CACHE . '=:cache WHERE ' . DB_USER_ID . '=:id',
         array('id' => $id, 'cache' => $cache));
+}
+
+function setActionAndCache($id, int $action, $cache) {
+    return Database::getInstance()->update('UPDATE ' . DB_TABLE_USERS . ' SET ' . DB_USER_ACTION . '=:action,'
+            . DB_USER_ACTION_CACHE . '=:cache WHERE ' . DB_USER_ID . '=:id',
+        array('id' => $id, 'action' => $action, 'cache' => $cache));
 }
 
 function resetAction($id): bool
@@ -70,7 +81,7 @@ function resetAction($id): bool
 function saveMessage($sender_id, $message_id) {
     Database::getInstance()->insert('INSERT INTO '. DB_TABLE_MESSAGES 
         . ' (' . DB_ITEM_ID . ', ' . DB_MESSAGES_SENDER_ID . ') VALUES (:message_id, :sender_id)', array(
-            'message_id' => $message_id, 'sender_id' => $sender_id
+            MESSAGE_ID_TAG => $message_id, 'sender_id' => $sender_id
     ));
 }
 
@@ -92,7 +103,7 @@ function getMessage($message_id) {
     return count($msg) ? $msg[0] : null;
 }
 
-function assignUserName($id, $name) {
+function assignUserName($id, string &$name) {
     return Database::getInstance()->update('UPDATE ' . DB_TABLE_USERS . ' SET ' . DB_ITEM_NAME . '=:name WHERE ' . DB_USER_ID . '=:id',
         array('id' => $id, 'name' => $name));
 }

@@ -1,13 +1,18 @@
 <?php
 require_once './database.php';
 require_once './user.php';
+require_once './telegram_api.php';
 
 defined('MAX_COLUMN_LENGTH') or define('MAX_COLUMN_LENGTH', 30);
 // UI constants
 defined('CMD_ADD_COURSE') or define('CMD_ADD_COURSE', 'افزودن درس');
 defined('CMD_ADD_TEACHER') or define('CMD_ADD_TEACHER', 'افزودن استاد');
 defined('CMD_UPLOAD_BOOKLET') or define('CMD_UPLOAD_BOOKLET', 'آپلود جزوه');
+defined('CMD_EDIT_BOOKLET') or define('CMD_EDIT_BOOKLET', 'ویرایش');
+defined('CMD_EDIT_BOOKLET_CAPTION') or define('CMD_EDIT_BOOKLET_CAPTION', 'ویرایش کپشن');
+defined('CMD_EDIT_BOOKLET_FILE') or define('CMD_EDIT_BOOKLET_FILE', 'ویرایش فایل');
 defined('CMD_STATISTICS') or define('CMD_STATISTICS', 'آمار ربات');
+defined('CMD_SEND_POST_TO_CHANNEL') or define('CMD_SEND_POST_TO_CHANNEL', 'ارسال پست');
 defined('CMD_ADD_ADMIN') or define('CMD_ADD_ADMIN', 'افزودن ادمین');
 defined('CMD_REMOVE_ADMIN') or define('CMD_REMOVE_ADMIN', 'حذف ادمین');
 
@@ -20,7 +25,7 @@ defined('CMD_MAIN_MENU') or define('CMD_MAIN_MENU', 'بازگشت به منو �
 
 defined('CMD_GOD_ACCESS') or define('CMD_GOD_ACCESS', '/godAccess');
 
-function alignButtons($items, $related_column, $data_prefix): array
+function alignButtons(array &$items, string $related_column, string $data_prefix): array
 {
     $buttons = array(array()); // an inline keyboard
     $current_row = 0;
@@ -41,7 +46,7 @@ function alignButtons($items, $related_column, $data_prefix): array
     return $buttons;
 }
 
-function createMenu($table_name, $previous_data = null, $filter_query = null, $filter_index = null): ?array
+function createMenu(string $table_name, ?string $previous_data = null, ?string $filter_query = null, ?string $filter_index = null): ?array
 {
     $query = 'SELECT * FROM ' . $table_name;
     if(!$previous_data && $filter_query && !$filter_index) // this condition just happens for remove admin menu
@@ -66,35 +71,39 @@ function createMenu($table_name, $previous_data = null, $filter_query = null, $f
     return array(INLINE_KEYBOARD => alignButtons($items, DB_ITEM_NAME, $data_prefix));
 }
 
-function createIndexMenu($booklets, $by_caption = false): array
+function createIndexMenu(array &$booklets, bool $by_caption = false, bool $all_items_option = true): array
 {
     $menu_keyboard = alignButtons($booklets, !$by_caption ? DB_BOOKLETS_INDEX : DB_BOOKLETS_CAPTION, DB_ITEM_ID . '=');
-    $menu_keyboard[] = array(
-        array(TEXT_TAG => 'همه', CALLBACK_DATA => DB_BOOKLETS_TEACHER_ID . '=' . $booklets[0][DB_BOOKLETS_TEACHER_ID] . ' AND ' . DB_BOOKLETS_COURSE_ID . '=' . $booklets[0][DB_BOOKLETS_COURSE_ID])
-    );
+    if($all_items_option)
+        $menu_keyboard[] = array(
+            array(TEXT_TAG => 'همه', CALLBACK_DATA => DB_BOOKLETS_TEACHER_ID . '=' . $booklets[0][DB_BOOKLETS_TEACHER_ID] . ' AND ' . DB_BOOKLETS_COURSE_ID . '=' . $booklets[0][DB_BOOKLETS_COURSE_ID])
+        );
     return array(INLINE_KEYBOARD => $menu_keyboard);
 }
 
-function getMainMenu($user_mode): array
+function getMainMenu(int $user_mode): array
 {
     $keyboard = array('resize_keyboard' => true, 'one_time_keyboard' => true,
-            'keyboard' => $user_mode == NORMAL_USER
+        'keyboard' => $user_mode == NORMAL_USER
                 ? array(array(CMD_MESSAGE_TO_ADMIN, CMD_DOWNLOAD_BOOKLET))
                 : array(
                     array(CMD_DOWNLOAD_BOOKLET, CMD_UPLOAD_BOOKLET), // casual keyboard
-                    array(CMD_ADD_COURSE, CMD_ADD_TEACHER),
-                    array(CMD_STATISTICS)
+                    array(CMD_ADD_COURSE, CMD_ADD_TEACHER, CMD_EDIT_BOOKLET),
+                    array(CMD_STATISTICS, CMD_SEND_POST_TO_CHANNEL)
                 ));
     if($user_mode == GOD_USER)
         $keyboard['keyboard'][] = array(CMD_REMOVE_ADMIN, CMD_ADD_ADMIN);
     return $keyboard;
 }
 
-function backToMainMenuKeyboard(): array
-{
-    return array('resize_keyboard' => true, 'one_time_keyboard' => true,
-        'keyboard' => array(
+function backToMainMenuKeyboard(?array $other_options=null): array {
+    $keyboard = array('resize_keyboard' => true, 'one_time_keyboard' => true,
+    'keyboard' => array(
             array(CMD_MAIN_MENU)
         )
     );
+    if($other_options)
+        array_unshift($keyboard['keyboard'], $other_options);
+
+    return $keyboard;
 }

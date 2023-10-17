@@ -6,8 +6,8 @@ $update = getUpdate();
 // check user is a member in specified channels
 // channels list: Edit the list for your desired channels
 if ($update != null) {
-    $channels = array(FIRST_2_JOIN_CHANNEL_ID => array('name' => "Persian College", 'url' => FIRST_2_JOIN_CHANNEL_URL),
-        SECOND_2_JOIN_CHANNEL_ID => array('name' => "Persian Project", 'url' => SECOND_2_JOIN_CHANNEL_URL));
+    $channels = array(FIRST_2_JOIN_CHANNEL_ID => array('name' => "Persian College", INLINE_URL_TAG => FIRST_2_JOIN_CHANNEL_URL),
+        SECOND_2_JOIN_CHANNEL_ID => array('name' => "Persian Project", INLINE_URL_TAG => SECOND_2_JOIN_CHANNEL_URL));
 
     $all_joined = true;
     $user_id = isset($update[CALLBACK_QUERY]) ? $update[CALLBACK_QUERY]['from']['id'] : $update['message']['from']['id'];
@@ -21,7 +21,7 @@ if ($update != null) {
         );
         $res = json_decode($res, true);
         $all_joined = $all_joined && (strtolower($res['result']['status'] ?? USER_NOT_A_MEMBER) != USER_NOT_A_MEMBER);
-        $channel_list_menu[$current_row][] = array(TEXT_TAG => $params['name'], 'url' => $params['url']);
+        $channel_list_menu[$current_row][] = array(TEXT_TAG => $params['name'], INLINE_URL_TAG => $params[INLINE_URL_TAG]);
         if(count($channel_list_menu[$current_row]) >= 2) {
             $channel_list_menu[] = array();
             $current_row++;

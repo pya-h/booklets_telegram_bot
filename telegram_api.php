@@ -8,8 +8,10 @@ defined('CHAT_ID') or define('CHAT_ID', 'chat_id');
 
 defined('CAPTION_TAG') or define('CAPTION_TAG', 'caption');
 defined('CALLBACK_DATA') or define('CALLBACK_DATA', 'callback_data');
+defined('INLINE_URL_TAG') or define('INLINE_URL_TAG', 'url');
 defined('CALLBACK_QUERY') or define('CALLBACK_QUERY', 'callback_query');
 
+defined('MESSAGE_ID_TAG') or define('MESSAGE_ID_TAG', 'message_id');
 defined('FILE_PHOTO') or define('FILE_PHOTO', 'photo');
 defined('FILE_VOICE') or define('FILE_VOICE', 'voice');
 defined('FILE_VIDEO') or define('FILE_VIDEO', 'video');
@@ -40,22 +42,23 @@ defined('METH_GET_CHAT_MEMBER') or define('METH_GET_CHAT_MEMBER', 'getChatMember
 defined('TOKEN') or define('TOKEN', 'telegramBotToken');
 defined('URL_BASE') or define('URL_BASE', 'https://api.telegram.org/bot' . TOKEN . '/');
 
-defined('BACKUP_CHANNEL_ID') or define('BACKUP_CHANNEL_ID', 'Backup channel id'); // each bokklet uploaded by admin will be backed up here
+defined('BACKUP_CHANNEL_ID') or define('BACKUP_CHANNEL_ID', '-1001724496283');
 
+defined('FIRST_2_JOIN_CHANNEL_URL') or define('FIRST_2_JOIN_CHANNEL_URL', 'https://t.me/persian_collegee');
+defined('FIRST_2_JOIN_CHANNEL_ID') or define('FIRST_2_JOIN_CHANNEL_ID', -1001903402454);
 
-defined('FIRST_2_JOIN_CHANNEL_URL') or define('FIRST_2_JOIN_CHANNEL_URL', 'https://t.me/your_first_channel');
-defined('FIRST_2_JOIN_CHANNEL_ID') or define('FIRST_2_JOIN_CHANNEL_ID', 'first channel telegram id');
+defined('SECOND_2_JOIN_CHANNEL_URL') or define('SECOND_2_JOIN_CHANNEL_URL', 'https://t.me/Persian_project');
+defined('SECOND_2_JOIN_CHANNEL_ID') or define('SECOND_2_JOIN_CHANNEL_ID', -1001648749488);
 
-defined('SECOND_2_JOIN_CHANNEL_URL') or define('SECOND_2_JOIN_CHANNEL_URL', 'https://t.me/your_second_channel');
-defined('SECOND_2_JOIN_CHANNEL_ID') or define('SECOND_2_JOIN_CHANNEL_ID', 'second channel id');
+defined('PERSIAN_COLLEGE_BOT_LINK') or define('PERSIAN_COLLEGE_BOT_LINK', 'https://t.me/Persian_collegebot');
 
 // TELEGRAM API GENERAL FUNCTIONS
-function getUpdate($as_array = true) {
+function getUpdate(bool $as_array = true): ?array {
     $content = file_get_contents("php://input");
     return json_decode($content, $as_array);
 }
 
-function callMethod($method, ...$params) {
+function callMethod(string $method, ...$params): ?string {
     // callMethod('method', 'key1', value1, 'key2', value2, ...)
     $payload = array("method" => $method);
     $len_params = count($params);
@@ -72,7 +75,7 @@ function callMethod($method, ...$params) {
     return curl_exec($req_handle);
 }
 
-function getFileFrom($message): ?array
+function getFileFrom(array &$message): ?array
 {
     $file_types = [FILE_PHOTO, FILE_VOICE, FILE_VIDEO, FILE_AUDIO, FILE_DOCUMENT];
 

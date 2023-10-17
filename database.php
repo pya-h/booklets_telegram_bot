@@ -73,7 +73,7 @@ class Database {
     $this->connection->query("SET NAMES 'utf8'");
   }
 
-  public function update($sql_query, $query_data = array()){
+  public function update(string $sql_query, array $query_data = array()) {
     $result = $this->safeQuery($sql_query, $query_data);
     if (!$result) {
       echo "Query: " . $sql_query . " failed due to " . mysqli_error($this->connection);
@@ -82,7 +82,7 @@ class Database {
     return $result;
   }
 
-  public function insert($sql_query, $query_data = array()){
+  public function insert(string $sql_query, array $query_data = array()){
     $result = $this->safeQuery($sql_query, $query_data);
     if (!$result) {
       echo "Query: " . $sql_query . " failed due to " . mysqli_error($this->connection);
@@ -91,7 +91,7 @@ class Database {
     return mysqli_insert_id($this->connection);;
   }
 
-  private function safeQuery($sql_query, $query_data){
+  private function safeQuery(string $sql_query, ?array $query_data) {
     if($query_data)
       foreach ($query_data as $key=>$value){
         $value = $this->connection->real_escape_string($value);
@@ -102,7 +102,7 @@ class Database {
     return $this->connection->query($sql_query);
   }
 
-  public function query($sql_query, $query_data = null, $specific_column = null){
+  public function query(string $sql_query, ?array $query_data = null, ?string $specific_column = null): ?array {
     $result = $this->safeQuery($sql_query, $query_data);
     if (!$result) {
       echo "Query: " . $sql_query . " failed due to " . mysqli_error($this->connection);
@@ -131,7 +131,7 @@ class Database {
 }
 
 // project specific functions:
-function extractCategories($data): array
+function extractCategories(string &$data): array
 {
   $categories = explode(DATA_JOIN_SIGN, $data);
 
