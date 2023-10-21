@@ -19,3 +19,9 @@ Running at: https://t.me/Persian_projectbot
 # God Users:
 1. All above features (except for support section, obviously!)
 2. Add/Remove Other admins
+
+# .env file pattern:
+DB_USER = "DatabaseUsername"
+DB_PASSWORD = "DatabaseUsernamesPassword"
+DB_NAME = "DatabaseName"
+TOKEN = "TelegramBotToken"
