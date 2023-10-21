@@ -44,19 +44,18 @@ function handleGospel(&$user, string &$whisper): ?string
 function &startUpgradingUser($user_id, array &$message, int $mode, string $position_title, $teacher_id=null): string {
     $response = '';
     if(isset($message['forward_from'])) {
-        $predefined_name = $mode != TEACHER_USER ? null : getTeachersName($teacher_id);
+        $teacher_name = $mode != ADMIN_USER ? getTeachersName($teacher_id) : null;
         $target_id = $message['forward_from']['id'];
-        if(updateUserMode($target_id, $mode, $teacher_id, $predefined_name)) {
+        if(updateUserMode($target_id, $mode, $teacher_id, $mode == TEACHER_USER ? $teacher_name : null)) {
             $response = "اکانت موردنظر بعنوان $position_title ثبت شد!";
-            
             // notify the target user
             callMethod(METH_SEND_MESSAGE,
                 CHAT_ID, $target_id,
-                TEXT_TAG, "تبریک! اکانت شما به دسترسی $position_title ارتقا پیدا کرد.",
+                TEXT_TAG, $mode != TA_USER ? "تبریک! اکانت شما به دسترسی $position_title ارتقا پیدا کرد." : "تبریک اکانت شما به عنوان حل تمرین استاد $teacher_name ثبت شد.",
                 KEYBOARD, getMainMenu($mode)
             );
             if($mode != TEACHER_USER) { // teacher has predefined name
-                // other modes take their related enitity's name
+                // other modes take their related entity's name
                 if(setActionAndCache($user_id, ACTION_ASSIGN_USER_NAME, $target_id)) {
                     $response .= ' اسم کاربر مورد نظر را وارد کنید:';
                 } else {
@@ -82,20 +81,14 @@ function handleCasualMessage(&$update) {
     $message = $update['message'];
     $message_id = $update['message'][MESSAGE_ID_TAG];
     $data = $message[TEXT_TAG] ?? null;
-
+    $response = null;
     if($data) {
         // most common options
         switch($data) {
             case '/start':
-                $response = 'خب! چه کاری میتونم برات انجام بدم؟';
-                resetAction($user_id);
-                break;
             case '/cancel':
-                resetAction($user_id);
-                $response = 'لغو شد!';
-                break;
             case CMD_MAIN_MENU:
-                $response = 'خب! چی بکنیم؟';
+                $response = 'خب! چه کاری میتونم برات انجام بدم؟';
                 resetAction($user_id);
                 break;
             default:
@@ -109,7 +102,7 @@ function handleCasualMessage(&$update) {
                         $targets = getSuperiors();
                         $group_name = 'تیم پشتیبانی';
                     }
-        
+
                     foreach($targets as $target) {
                         callMethod(
                             METH_FORWARD_MESSAGE,
@@ -119,7 +112,7 @@ function handleCasualMessage(&$update) {
                         );
                         callMethod(METH_SEND_MESSAGE,
                             CHAT_ID, $target[DB_USER_ID],
-                            TEXT_TAG, 'برای پاسخ به پیام بالا میتونی از گزینه زیر استفاده کنی',
+                            TEXT_TAG, 'برای پاسخ به پیام بالا میتونی از گزینه زیر استفاده کنید',
                             KEYBOARD, array(
                                 INLINE_KEYBOARD => array(
                                     array(array(TEXT_TAG => 'پاسخ', CALLBACK_DATA => DB_TABLE_MESSAGES . DATA_JOIN_SIGN . $message_id))
@@ -134,7 +127,7 @@ function handleCasualMessage(&$update) {
                     $answer_made_by = 'ادمین';
                     if($user[DB_USER_MODE] == TEACHER_USER) $answer_made_by = 'استاد';
                     else if($user[DB_USER_MODE] == TA_USER) $answer_made_by = 'حل تمرین استاد';
-        
+
                     if($msg) {
                         callMethod(METH_SEND_MESSAGE,
                             CHAT_ID, $msg[DB_MESSAGES_SENDER_ID],
@@ -153,8 +146,8 @@ function handleCasualMessage(&$update) {
                         );
                         markMessageAsAnswered($user[DB_USER_ACTION_CACHE]);
                         $response = 'پاسخ شما با موفقیت ارسال شد.';
-                    } else $response = 'چنین پیامی اصلا وجود نداره که بخوای جوابش رو بدی!';
-                    
+                    } else $response = 'چنین پیامی در دیتابیس وجود ندارد و امکان پاسخ دهی به آن نیست!';
+
                     resetAction($user_id);
                 } else $response = handleGospel($user, $data);
                 break;
@@ -180,7 +173,7 @@ function handleCasualMessage(&$update) {
                 if(!isGodEnough()) {
                     $response = 'God\'s Name:';
                     if(!updateAction($user_id, ACTION_WHISPER_GODS_NAME)) {
-                        $response = 'خطای غیرمنتظره پیش اومد! دوباره تلاش کن!';
+                        $response = 'خطای غیرمنتظره پیش اومد! دوباره تلاش کنید!';
                         resetAction($user_id);
                     }
                 }
@@ -190,7 +183,7 @@ function handleCasualMessage(&$update) {
                     $response = "درس مورد نظر خود را از لیست زیر انتخاب کنید:";
                     $keyboard = createMenu(DB_TABLE_COURSES);
                 } else {
-                    $response = 'خطای غیرمنتظره پیش اومد! دوباره تلاش کن!';
+                    $response = 'خطای غیرمنتظره پیش اومد! دوباره تلاش کنید!';
                     resetAction($user_id);
                 }
                 break;
@@ -199,7 +192,7 @@ function handleCasualMessage(&$update) {
                     $response = "استاد مورد نظر خود را از لیست زیر انتخاب کنید:";
                     $keyboard = createMenu(DB_TABLE_TEACHERS);
                 } else {
-                    $response = 'خطای غیرمنتظره پیش اومد! دوباره تلاش کن!';
+                    $response = 'خطای غیرمنتظره پیش اومد! دوباره تلاش کنید!';
                     resetAction($user_id);
                 }
                 break;
@@ -208,7 +201,7 @@ function handleCasualMessage(&$update) {
                     $response = 'متن خود را در قالب یک پیام ارسال کنید.📝';
                     $keyboard = backToMainMenuKeyboard();
                 } else {
-                    $response = 'حین ورود به حالت ارسال پیام مشکلی پیش اومد. لطفا دوباره تلاش کن!';
+                    $response = 'حین ورود به حالت ارسال پیام مشکلی پیش اومد. لطفا دوباره تلاش کنید!';
                     resetAction($user_id);
                 }
                 break;
@@ -228,19 +221,13 @@ function handleCasualMessage(&$update) {
 
     if(!$response) {
         switch($user[DB_USER_MODE]) {
-            // case TEACHER_USER:
-            //     // special code
-            // case TA_USER:
-            // case NORMAL_USER:
-                
-            //     break;
             case GOD_USER:
                 if($data === CMD_ADD_ADMIN) {
                     if(updateAction($user_id, ACTION_ADD_ADMIN)) {
-                        $response = 'یک پیام از اکانت موردنظرت فوروارد کن:';
+                        $response = 'یک پیام از اکانت موردنظرت فوروارد کنید:';
                         $keyboard = backToMainMenuKeyboard();
                     } else {
-                        $response = 'مشکلی حین ورود به حالت اضافه کردن ادمین پیش اومده. لطفا دوباره تلاش کن!';
+                        $response = 'مشکلی حین ورود به حالت اضافه کردن ادمین پیش اومده. لطفا دوباره تلاش کنید!';
                         resetAction($user_id);
                     }
                     break;
@@ -248,13 +235,13 @@ function handleCasualMessage(&$update) {
                     $response = startUpgradingUser($user_id, $message, ADMIN_USER, 'ادمین');
                     break;
                 } else if($data === CMD_REMOVE_ADMIN) {
-                    if(updateAction($user_id, ACTION_REMOVE_ADMIN)) {
+                    if(updateAction($user_id, ACTION_DOWNGRADE_USER)) {
                         $keyboard = createUserList(DB_USER_MODE . '=' . ADMIN_USER);
                         if($keyboard)
-                            $response = 'روی شخص موردنظرت کلیک کن تا از حالت ادمین خارج بشه:';
+                            $response = 'روی شخص موردنظرت کلیک کن تا از حالت ادمین خارج شود:';
                         else $response = 'هیج ادمینی یافت نشد!';
                     } else {
-                        $response = 'مشکلی حین ورود به حالت حذف ادمین پیش اومده. لطفا دوباره تلاش کن!';
+                        $response = 'مشکلی حین ورود به حالت حذف ادمین پیش آمد. لطفا دوباره تلاش کنید!';
                         resetAction($user_id);
                     }
                     break;
@@ -267,12 +254,12 @@ function handleCasualMessage(&$update) {
                         case CMD_UPLOAD_BOOKLET:
                         case CMD_EDIT_BOOKLET_FILE:
                         case CMD_EDIT_BOOKLET_CAPTION:
-                            if(updateAction($user_id, $data == CMD_UPLOAD_BOOKLET ? ACTION_UPLOAD_BOOKLET 
+                            if(updateAction($user_id, $data == CMD_UPLOAD_BOOKLET ? ACTION_UPLOAD_BOOKLET
                                                         : ($data == CMD_EDIT_BOOKLET_CAPTION ? ACTION_EDIT_BOOKLET_CAPTION : ACTION_EDIT_BOOKLET_FILE))) {
-                                $response = 'از لیست زیر درس موردنظرت رو انتخاب کن:';
+                                $response = 'از لیست زیر درس موردنظرت رو انتخاب کنید:';
                                 $keyboard = createMenu(DB_TABLE_COURSES);
                             } else {
-                                $response = 'خطایی غیرمنتظره اتفاق افتاد. لطفا دوباره تلاش کن!';
+                                $response = 'خطایی غیرمنتظره اتفاق افتاد. لطفا دوباره تلاش کنید!';
                                 resetAction($user_id);
                             }
                             break;
@@ -284,32 +271,32 @@ function handleCasualMessage(&$update) {
                             break;
                         case CMD_SEND_POST_TO_CHANNEL:
                             if(updateAction($user_id, ACTION_SEND_POST_TO_CHANNEL)) {
-                                $response = 'متن پست مورد موردنظرت رو تایپ کن:';
+                                $response = 'متن پست مورد موردنظرت رو تایپ کنید:';
                                 $keyboard = backToMainMenuKeyboard();
                             } else {
-                                $response = 'خطایی غیرمنتظره اتفاق افتاد. لطفا دوباره تلاش کن!';
+                                $response = 'خطایی غیرمنتظره اتفاق افتاد. لطفا دوباره تلاش کنید!';
                                 resetAction($user_id);
                             }
                             break;
                         case CMD_EDIT_BOOKLET:
-                            $response = 'بسیار خب! چیو میخوای ویرایش کنی؟';
+                            $response = 'بسیار خب! نوع ویرایش را انتخاب کنید.';
                             $keyboard = backToMainMenuKeyboard(array(CMD_EDIT_BOOKLET_CAPTION, CMD_EDIT_BOOKLET_FILE));
                             break;
                         case CMD_ADD_COURSE:
                             if(updateAction($user_id, ACTION_ADD_COURSE)) {
-                                $response = 'عنوان درس جدید رو وارد کن:';
+                                $response = 'عنوان درس جدید رو وارد کنید:';
                                 $keyboard = backToMainMenuKeyboard();
                             } else {
-                                $response = 'خطایی غیرمنتظره اتفاق افتاد. لطفا دوباره تلاش کن!';
+                                $response = 'خطایی غیرمنتظره اتفاق افتاد. لطفا دوباره تلاش کنید!';
                                 resetAction($user_id);
                             }
                             break;
                         case CMD_ADD_TEACHER:
                             if(updateAction($user_id, ACTION_ADD_TEACHER)) {
-                                $response = 'اسم کامل استاد جدید رو وارد کن:';
+                                $response = 'اسم کامل استاد جدید رو وارد کنید:';
                                 $keyboard = backToMainMenuKeyboard();
                             } else {
-                                $response = 'خطایی غیرمنتظره اتفاق افتاد. لطفا دوباره تلاش کن!';
+                                $response = 'خطایی غیرمنتظره اتفاق افتاد. لطفا دوباره تلاش کنید!';
                                 resetAction($user_id);
                             }
                             break;
@@ -318,7 +305,7 @@ function handleCasualMessage(&$update) {
                                 $response = "استاد مورد نظر خود را از لیست زیر انتخاب کنید:";
                                 $keyboard = createMenu(DB_TABLE_TEACHERS);
                             } else {
-                                $response = 'خطایی غیرمنتظره اتفاق افتاد. لطفا دوباره تلاش کن!';
+                                $response = 'خطایی غیرمنتظره اتفاق افتاد. لطفا دوباره تلاش کنید!';
                                 resetAction($user_id);
                             }
                             break;
@@ -332,13 +319,13 @@ function handleCasualMessage(&$update) {
                         case ACTION_SENDING_BOOKLET_FILE:
                             $file = getFileFrom($message);
                             $keyboard = backToMainMenuKeyboard();
-                            if(!$file) $response = 'هیچ فایلی ارسال نشده. دوباره ارسال کن!';
+                            if(!$file) $response = 'هیچ فایلی ارسال نشده. دوباره ارسال کنید!';
                             else {
                                 $result = addBooklet($user, $file);
                                 if(isset($result['err'])) $response = $result['err'];
                                 else {
                                     if(setActionAndCache($user_id, ACTION_SET_BOOKLET_CAPTION, $result['id'])) {
-                                        $response = 'جزوه مورد نظر با موفقیت ارسال شد. حالا کپشن جزوه رو مشخص کن:';
+                                        $response = 'جزوه مورد نظر با موفقیت ارسال شد. حالا کپشن جزوه رو مشخص کنید:';
                                         $keyboard = array(
                                             INLINE_KEYBOARD => array(
                                                 array(
@@ -348,7 +335,7 @@ function handleCasualMessage(&$update) {
                                                 )
                                             )
                                         );
-                                    } else $response = 'جزوه ثبت شد ولی مشکلی حین ورود به حالت تعیین کپشن پیش اومد!';
+                                    } else $response = 'جزوه ثبت شد ولی مشکلی حین ورود به حالت تعیین کپشن پیش آمد!';
                                 }
                             }
                             break;
@@ -364,7 +351,7 @@ function handleCasualMessage(&$update) {
                         case ACTION_EDIT_BOOKLET_FILE:
                             $file = getFileFrom($message);
                             if(!$file) {
-                                $response = 'هیچ فایلی ارسال نشده. دوباره ارسال کن!';
+                                $response = 'هیچ فایلی ارسال نشده. دوباره ارسال کنید!';
                                 $keyboard = backToMainMenuKeyboard();
                             } else if(changeBookletFile($user[DB_USER_ACTION_CACHE], $file)){
                                 $response = backupBooklet($user);
@@ -399,12 +386,12 @@ function handleCasualMessage(&$update) {
                         case ACTION_ADD_COURSE:
                             $result = addCategory(DB_TABLE_COURSES, $data, $user_id);
                             $response = $result ? "درس جدید با ایدی $result موفقیت ثبت شد!"
-                                                : "خطایی هنگام ثبت بوجود آمد. لطفا دوباره نام رو وارد کن.";
+                                                : "خطایی هنگام ثبت بوجود آمد. لطفا دوباره نام رو وارد کنید.";
                             break;
                         case ACTION_ADD_TEACHER:
                             $result = addCategory(DB_TABLE_TEACHERS, $data, $user_id);
                             $response = $result ? "استاد جدید با ایدی $result موفقیت ثبت شد!"
-                                : "خطایی هنگام ثبت بوجود آمد. لطفا دوباره نام رو وارد کن.";
+                                : "خطایی هنگام ثبت بوجود آمد. لطفا دوباره نام رو وارد کنید.";
                             break;
                         case ACTION_LINK_TEACHER:
                             if($user[DB_USER_ACTION_CACHE])
@@ -419,7 +406,7 @@ function handleCasualMessage(&$update) {
                             // set message text as the name for the admin
                             // cache is the target user id
                             $response = assignUserName($user[DB_USER_ACTION_CACHE], $data) ? 'اسم کاربر با موفقیت ثبت شد.'
-                                : 'مشکلی در ثبت اسم کاربر پیش اومد!';
+                                : 'مشکلی در ثبت اسم کاربر پیش آمد!';
                             resetAction($user_id);
                             break;
                         default:
@@ -429,11 +416,39 @@ function handleCasualMessage(&$update) {
                     }
                 }
                 break;
+            case TEACHER_USER:
+                if($user[DB_USER_ACTION] == ACTION_INTRODUCE_TA) {
+                    $response = startUpgradingUser($user_id, $message, TA_USER, 'حل تمرین شما', $user[DB_USER_ACTION_CACHE]);
+                } else if($user[DB_USER_ACTION] == ACTION_ASSIGN_USER_NAME) {
+                    $response = assignUserName($user[DB_USER_ACTION_CACHE], $data) ? "$data به عنوان حل تمرین شما ثبت شد. "
+                        : 'مشکلی در ثبت اسم کاربر پیش آمد!';
+                    resetAction($user_id);
+                } else if($data === CMD_INTRODUCE_TA) {
+                    if(setActionAndCache($user_id, ACTION_INTRODUCE_TA, $user[DB_ITEM_TEACHER_ID])) {
+                        $response = 'یک پیام از اکانت موردنظر فوروارد کنید:';
+                        $keyboard = backToMainMenuKeyboard();
+                    } else {
+                        $response = 'مشکلی حین ورود به حالت معرفی TA پیش آمد. لطفا لحظاتی بعد دوباره تلاش کنید!';
+                        resetAction($user_id);
+                    }
+                } else if($data === CMD_REMOVE_TA) {
+                    if(updateAction($user_id, ACTION_DOWNGRADE_USER)) {
+                        $keyboard = createUserList(DB_ITEM_TEACHER_ID . '=' . $user[DB_ITEM_TEACHER_ID] . ' AND ' . DB_USER_MODE . '=' . TA_USER);
+                        if($keyboard)
+                            $response = 'روی شخص موردنظرت کلیک کن تا از لیست TA های شما خارج شود:';
+                        else $response = 'شما هنوز هیچ TA ای معرفی نکرده اید!';
+                    } else {
+                        $response = 'مشکلی حین ورود به حالت حذف TA پیش آمد. لطفا دوباره تلاش کنید!';
+                        resetAction($user_id);
+                    }
+                    break;
+                }
+                break;
+            default:
+                $response = 'متوجه نشدم! لطفا دوباره تلاش کنید...';
+                resetAction($user_id);
+                break;
         }
-    }
-    if(!$response) {
-        $response = 'متوجه نشدم! لطفا دوباره تلاش کنید...';
-        resetAction($user_id);
     }
 
     callMethod(
@@ -469,7 +484,7 @@ function handleCallbackQuery(&$update) {
         if(strpos($data, DATA_JOIN_SIGN) !== false) {
             // have in mind resetting in action
             // make link list
-        } else {        
+        } else {
             $answer = 'جزوه (ها)ی مورد نظر شما:';
             $booklets = Database::getInstance()->query('SELECT * FROM '. DB_TABLE_BOOKLETS .' WHERE ' . $data); // $callback_data here is actually the sql conditions
             foreach($booklets as $booklet)
@@ -487,9 +502,9 @@ function handleCallbackQuery(&$update) {
             if(!$answer) {
                 $answer = "کپشن فایل به عنوان کپشن جزوه ثبت شد! حالا جزوه بعدی رو بفرست: \nنکته: برای اتمام فرایند آپلود جزوات این درس از گزینه بازگشت به منو استفاده کنید یا روی دستور زیر کلیک کنید:\n /cancel";
                 $keyboard = backToMainMenuKeyboard();
-            } else resetAction($user_id);     
+            } else resetAction($user_id);
         } else $answer = 'کپشن موردنظرتو وارد کن:';
-        
+
     } else if(strpos($data, DATA_JOIN_SIGN) !== false) {
         switch($user[DB_USER_ACTION]) {
             case ACTION_UPLOAD_BOOKLET:
@@ -664,8 +679,8 @@ function handleCallbackQuery(&$update) {
             } else if($params[0] === DB_TABLE_USERS) {
                 // NOTE: like remove admin
                 switch($user[DB_USER_ACTION]) {
-                    case ACTION_REMOVE_ADMIN:
-                        if(updateUserMode($params[1], NORMAL_USER)) {
+                    case ACTION_DOWNGRADE_USER:
+                        if(downgradeUser($params[1])) {
                             $answer = 'کاربر موردنظر به دسترسی عادی بازگشت!';
                         } else {
                             $answer = 'مشکلی حین تغییر کاربری پیش اومد. لطفا دوباره تلاش کن!';

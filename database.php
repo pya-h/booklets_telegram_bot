@@ -35,10 +35,6 @@ defined('DB_MESSAGES_SENDER_ID') or define('DB_MESSAGES_SENDER_ID','sender_id');
 defined('DB_MESSAGES_ANSWERED') or define('DB_MESSAGES_ANSWERED','answered');
 defined('DB_MESSAGES_TARGET_GROUP') or define('DB_MESSAGES_TARGET_GROUP','target');
 
-//database: god mode
-defined('GOD_NAME') or define('GOD_NAME','zeus');
-defined('GOD_SECRET') or define('GOD_SECRET','whatever');
-
 defined('MAX_GODS') or define('MAX_GODS', 3);
 
 

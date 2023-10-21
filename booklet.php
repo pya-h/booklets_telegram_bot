@@ -28,7 +28,7 @@ function extractBookletIndexAndCaption(string &$text): array
     return [$index, $caption];
 }
 
-function makeCatgeoryString($course_id, $teacher_id): string{
+function makeCategoryString($course_id, $teacher_id): string{
     return DB_TABLE_COURSES . RELATED_DATA_SEPARATOR . $course_id . DATA_JOIN_SIGN 
         . DB_TABLE_TEACHERS . RELATED_DATA_SEPARATOR . $teacher_id;
 }
@@ -78,7 +78,7 @@ function backupBooklet(&$user, ?string $new_caption = null): ?string
     if($booklet && count($booklet)) {
         // save current booklet's teacher id and course id, for next upload
         setActionAndCache($user[DB_USER_ID], ACTION_SENDING_BOOKLET_FILE,
-                makeCatgeoryString($booklet[0][DB_ITEM_COURSE_ID], $booklet[0][DB_ITEM_TEACHER_ID]));
+                makeCategoryString($booklet[0][DB_ITEM_COURSE_ID], $booklet[0][DB_ITEM_TEACHER_ID]));
         // send to channel
         callMethod(
             'send' . ucfirst($booklet[0][DB_BOOKLETS_TYPE]),

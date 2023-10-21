@@ -8,13 +8,13 @@ defined('ACTION_UPLOAD_BOOKLET') or define('ACTION_UPLOAD_BOOKLET', 2);
 defined('ACTION_SENDING_BOOKLET_FILE') or define('ACTION_SENDING_BOOKLET_FILE', 3);
 defined('ACTION_ADD_COURSE') or define('ACTION_ADD_COURSE', 4);
 defined('ACTION_ADD_TEACHER') or define('ACTION_ADD_TEACHER', 5); // EXTRA ACTION VALUE (TEACHER ID/COURSE_ID/ETC.)
-defined('ACTION_WHISPER_GODS_NAME') or define('ACTION_WHISPER_GODS_NAME', 6); 
+defined('ACTION_WHISPER_GODS_NAME') or define('ACTION_WHISPER_GODS_NAME', 6);
 defined('ACTION_WHISPER_GODS_SECRET') or define('ACTION_WHISPER_GODS_SECRET', 7);
 defined('ACTION_SELECT_BOOKLET_TO_GET') or define('ACTION_SELECT_BOOKLET_TO_GET', 8);
 defined('ACTION_WRITE_MESSAGE') or define('ACTION_WRITE_MESSAGE', 9);
 defined('ACTION_WRITE_REPLY_TO_USER') or define('ACTION_WRITE_REPLY_TO_USER', 10);
 defined('ACTION_ADD_ADMIN') or define('ACTION_ADD_ADMIN', 11);
-defined('ACTION_REMOVE_ADMIN') or define('ACTION_REMOVE_ADMIN', -1);
+defined('ACTION_DOWNGRADE_USER') or define('ACTION_DOWNGRADE_USER', -1);
 defined('ACTION_ASSIGN_USER_NAME') or define('ACTION_ASSIGN_USER_NAME', 12);
 defined('ACTION_SET_BOOKLET_CAPTION') or define('ACTION_SET_BOOKLET_CAPTION', 13);
 defined('ACTION_EDIT_BOOKLET_CAPTION') or define('ACTION_EDIT_BOOKLET_CAPTION', 14);
@@ -23,27 +23,28 @@ defined('ACTION_SEND_POST_TO_CHANNEL') or define('ACTION_SEND_POST_TO_CHANNEL', 
 defined('ACTION_EDIT_BOOKLET_FILE') or define('ACTION_EDIT_BOOKLET_FILE', 17);
 defined('ACTION_LINK_TEACHER') or define('ACTION_LINK_TEACHER', 18);
 defined('ACTION_SELECT_TEACHER_TO_CONTACT') or define('ACTION_SELECT_TEACHER_TO_CONTACT', 19);
+defined('ACTION_INTRODUCE_TA') or define('ACTION_INTRODUCE_TA', 20);
 
 function getSuperiors(): ?array
 {
     // get admin and gods
-    return Database::getInstance()->query('SELECT * FROM '. DB_TABLE_USERS 
+    return Database::getInstance()->query('SELECT * FROM '. DB_TABLE_USERS
         .' WHERE ' . DB_USER_MODE . '=' . GOD_USER . ' OR ' . DB_USER_MODE . '=' . ADMIN_USER);
 }
 
 function getCertainUsers(int $user_mode): ?array {
-    return Database::getInstance()->query('SELECT * FROM '. DB_TABLE_USERS 
+    return Database::getInstance()->query('SELECT * FROM '. DB_TABLE_USERS
         .' WHERE ' . DB_USER_MODE . '=:mode', array('mode' => $user_mode));
 }
 
 function getTeacherGroup($teacher_id): ?array {
-    return Database::getInstance()->query('SELECT * FROM '. DB_TABLE_USERS 
+    return Database::getInstance()->query('SELECT * FROM '. DB_TABLE_USERS
         .' WHERE ' . DB_ITEM_TEACHER_ID . '=:teacher_id', array('teacher_id' => $teacher_id));
 }
 
 function getUser($id): array{
     $db = Database::getInstance();
-    $user = $db->query('SELECT * FROM '. DB_TABLE_USERS .' WHERE ' . DB_USER_ID . '=:id LIMIT 1', 
+    $user = $db->query('SELECT * FROM '. DB_TABLE_USERS .' WHERE ' . DB_USER_ID . '=:id LIMIT 1',
         array('id' => $id));
 
     if(count($user) == 1)
@@ -78,6 +79,12 @@ function updateUserMode($id, int $mode, $teacher_id=null, ?string $predefined_na
     return Database::getInstance()->update($query, $params);
 }
 
+function downgradeUser($id) {
+    return Database::getInstance()->update('UPDATE ' . DB_TABLE_USERS . ' SET ' . DB_USER_MODE . '=' . NORMAL_USER
+            . ',' . DB_ITEM_TEACHER_ID . '=NULL WHERE ' . DB_USER_ID . '=:id', array('id' => $id));
+
+}
+
 function updateActionCache($id, $cache) {
     return Database::getInstance()->update('UPDATE ' . DB_TABLE_USERS . ' SET ' . DB_USER_ACTION_CACHE . '=:cache WHERE ' . DB_USER_ID . '=:id',
         array('id' => $id, 'cache' => $cache));
@@ -97,7 +104,7 @@ function resetAction($id): bool
 function saveMessage($sender_id, $message_id, ?int $target_group=null) {
     $fields = implode(',', [DB_ITEM_ID, DB_MESSAGES_SENDER_ID, DB_MESSAGES_TARGET_GROUP]);
     $target_value = $target_group ? ":target" : "NULL";
-    return Database::getInstance()->insert('INSERT INTO '. DB_TABLE_MESSAGES 
+    return Database::getInstance()->insert('INSERT INTO '. DB_TABLE_MESSAGES
         . " ($fields) VALUES (:message_id, :sender_id, $target_value)", array(
             'message_id' => $message_id, 'sender_id' => $sender_id, 'target' => $target_group
     ));

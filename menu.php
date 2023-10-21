@@ -5,24 +5,25 @@ require_once './telegram_api.php';
 
 defined('MAX_COLUMN_LENGTH') or define('MAX_COLUMN_LENGTH', 30);
 // UI constants
-defined('CMD_ADD_COURSE') or define('CMD_ADD_COURSE', 'افزودن درس');
-defined('CMD_ADD_TEACHER') or define('CMD_ADD_TEACHER', 'افزودن استاد');
-defined('CMD_UPLOAD_BOOKLET') or define('CMD_UPLOAD_BOOKLET', 'آپلود جزوه');
-defined('CMD_EDIT_BOOKLET') or define('CMD_EDIT_BOOKLET', 'ویرایش');
-defined('CMD_EDIT_BOOKLET_CAPTION') or define('CMD_EDIT_BOOKLET_CAPTION', 'ویرایش کپشن');
-defined('CMD_EDIT_BOOKLET_FILE') or define('CMD_EDIT_BOOKLET_FILE', 'ویرایش فایل');
-defined('CMD_STATISTICS') or define('CMD_STATISTICS', 'آمار');
-defined('CMD_SEND_POST_TO_CHANNEL') or define('CMD_SEND_POST_TO_CHANNEL', 'ارسال پست');
-defined('CMD_ADD_ADMIN') or define('CMD_ADD_ADMIN', 'افزودن ادمین');
-defined('CMD_REMOVE_ADMIN') or define('CMD_REMOVE_ADMIN', 'حذف ادمین');
-defined('CMD_LINK_TEACHER') or define('CMD_LINK_TEACHER', 'لینک اکانت استاد');
-defined('CMD_INTRODUCE_TA') or define('CMD_INTRODUCE_TA', 'معرفی TA');
+defined('CMD_ADD_COURSE') or define('CMD_ADD_COURSE', 'افزودن درس 📚');
+defined('CMD_ADD_TEACHER') or define('CMD_ADD_TEACHER', 'افزودن استاد 👨‍🏫');
+defined('CMD_UPLOAD_BOOKLET') or define('CMD_UPLOAD_BOOKLET', 'آپلود جزوه 📤');
+defined('CMD_EDIT_BOOKLET') or define('CMD_EDIT_BOOKLET', 'ویرایش ✏️');
+defined('CMD_EDIT_BOOKLET_CAPTION') or define('CMD_EDIT_BOOKLET_CAPTION', 'ویرایش کپشن 🪶');
+defined('CMD_EDIT_BOOKLET_FILE') or define('CMD_EDIT_BOOKLET_FILE', 'ویرایش فایل 📝');
+defined('CMD_STATISTICS') or define('CMD_STATISTICS', 'آمار 🧮');
+defined('CMD_SEND_POST_TO_CHANNEL') or define('CMD_SEND_POST_TO_CHANNEL', 'ارسال پست 📯');
+defined('CMD_ADD_ADMIN') or define('CMD_ADD_ADMIN', 'افزودن ادمین 💂‍♂️');
+defined('CMD_REMOVE_ADMIN') or define('CMD_REMOVE_ADMIN', 'حذف ادمین ❌');
+defined('CMD_LINK_TEACHER') or define('CMD_LINK_TEACHER', 'لینک اکانت استاد 🔗');
+defined('CMD_INTRODUCE_TA') or define('CMD_INTRODUCE_TA', 'معرفی TA 👩‍🎓');
+defined('CMD_REMOVE_TA') or define('CMD_REMOVE_TA', 'حذف TA ❌');
 
-defined('CMD_DOWNLOAD_BY_COURSE') or define('CMD_DOWNLOAD_BY_COURSE', 'جست و جو بر اساس نام درس📖');
-defined('CMD_DOWNLOAD_BY_TEACHER') or define('CMD_DOWNLOAD_BY_TEACHER', 'جست و جو بر اساس نام استاد👨‍🏫');
-defined('CMD_DOWNLOAD_BOOKLET') or define('CMD_DOWNLOAD_BOOKLET', 'دانلود جزوه📖');
+defined('CMD_DOWNLOAD_BY_COURSE') or define('CMD_DOWNLOAD_BY_COURSE', 'جست و جو بر اساس نام درس 📖');
+defined('CMD_DOWNLOAD_BY_TEACHER') or define('CMD_DOWNLOAD_BY_TEACHER', 'جست و جو بر اساس نام استاد 👨‍🏫');
+defined('CMD_DOWNLOAD_BOOKLET') or define('CMD_DOWNLOAD_BOOKLET', 'دانلود جزوه 📖');
 defined('CMD_MESSAGE_TO_ADMIN') or define('CMD_MESSAGE_TO_ADMIN', 'پشتیبانی 💬');
-defined('CMD_MESSAGE_TO_TEACHER') or define('CMD_MESSAGE_TO_TEACHER', 'ارتباط با استاد 👨‍🏫');
+defined('CMD_MESSAGE_TO_TEACHER') or define('CMD_MESSAGE_TO_TEACHER', 'ارتباط با استاد 💭👨‍🏫');
 
 defined('CMD_MAIN_MENU') or define('CMD_MAIN_MENU', 'بازگشت به منو ↪️');
 
@@ -107,7 +108,7 @@ function getMainMenu(int $user_mode): array
     if($user_mode == GOD_USER)
         $keyboard['keyboard'][] = array(CMD_REMOVE_ADMIN, CMD_ADD_ADMIN);
     else if($user_mode == TEACHER_USER)
-        $keyboard['keyboard'][] = array(CMD_INTRODUCE_TA);
+        $keyboard['keyboard'][] = array(CMD_REMOVE_TA, CMD_INTRODUCE_TA);
     return $keyboard;
 }
 
