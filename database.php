@@ -1,13 +1,9 @@
 <?php
+require_once './config.php';
+
 defined('RELATED_DATA_SEPARATOR') or define('RELATED_DATA_SEPARATOR', '/');
 defined('DATA_JOIN_SIGN') or define('DATA_JOIN_SIGN', '<>');
 defined('INDEX_SEPARATOR') or define('INDEX_SEPARATOR', ':');
-
-// config
-defined('DB_HOST') or define('DB_HOST', 'localhost');
-defined('DB_USER') or define('DB_USER', 'whatever');
-defined('DB_PASSWORD') or define('DB_PASSWORD', 'the');
-defined('DB_NAME') or define('DB_NAME','fuck');
 
 // database tables
 defined('DB_TABLE_USERS') or define('DB_TABLE_USERS','users');
@@ -19,6 +15,8 @@ defined('DB_TABLE_MESSAGES') or define('DB_TABLE_MESSAGES','messages');
 // database table:COMMON fields
 defined('DB_ITEM_ID') or define('DB_ITEM_ID','id');
 defined('DB_ITEM_NAME') or define('DB_ITEM_NAME','name'); // for both course and teacher tables
+defined('DB_ITEM_TEACHER_ID') or define('DB_ITEM_TEACHER_ID','teacher_id');
+defined('DB_ITEM_COURSE_ID') or define('DB_ITEM_COURSE_ID','course_id');
 
 // database table user fields:
 defined('DB_USER_ID') or define('DB_USER_ID','id');
@@ -27,8 +25,6 @@ defined('DB_USER_MODE') or define('DB_USER_MODE','mode');
 defined('DB_USER_ACTION_CACHE') or define('DB_USER_ACTION_CACHE','action_cache');
 
 //database table:booklets fields
-defined('DB_BOOKLETS_TEACHER_ID') or define('DB_BOOKLETS_TEACHER_ID','teacher_id');
-defined('DB_BOOKLETS_COURSE_ID') or define('DB_BOOKLETS_COURSE_ID','course_id');
 defined('DB_BOOKLETS_FILE_ID') or define('DB_BOOKLETS_FILE_ID','file_id');
 defined('DB_BOOKLETS_CAPTION') or define('DB_BOOKLETS_CAPTION','caption');
 defined('DB_BOOKLETS_INDEX') or define('DB_BOOKLETS_INDEX','index_name');
@@ -37,10 +33,11 @@ defined('DB_BOOKLETS_TYPE') or define('DB_BOOKLETS_TYPE','type');
 //database table:messages fields
 defined('DB_MESSAGES_SENDER_ID') or define('DB_MESSAGES_SENDER_ID','sender_id');
 defined('DB_MESSAGES_ANSWERED') or define('DB_MESSAGES_ANSWERED','answered');
+defined('DB_MESSAGES_TARGET_GROUP') or define('DB_MESSAGES_TARGET_GROUP','target');
 
 //database: god mode
-defined('GOD_NAME') or define('GOD_NAME','whatever');
-defined('GOD_SECRET') or define('GOD_SECRET','thefuck');
+defined('GOD_NAME') or define('GOD_NAME','zeus');
+defined('GOD_SECRET') or define('GOD_SECRET','whatever');
 
 defined('MAX_GODS') or define('MAX_GODS', 3);
 
@@ -49,6 +46,8 @@ defined('MAX_GODS') or define('MAX_GODS', 3);
 defined('NORMAL_USER') or define('NORMAL_USER', 0);
 defined('ADMIN_USER') or define('ADMIN_USER', 1);
 defined('GOD_USER') or define('GOD_USER', 2);
+defined('TEACHER_USER') or define('TEACHER_USER', 3);
+defined('TA_USER') or define('TA_USER', 4);
 
 // database engine
 class Database {
@@ -149,7 +148,7 @@ function extractCategories(string &$data): array
   if(!$course || !$teacher || count($course) !== 2 || count($teacher) !== 2)
     return array('err' => 'یکی از فیلدهای درس یا استاد به درستی انتخاب نشدن!');
 
-  return array(DB_BOOKLETS_TEACHER_ID => $teacher[1], DB_BOOKLETS_COURSE_ID => $course[1], 'list_by' => $categories[2] ?? 0);
+  return array(DB_ITEM_TEACHER_ID => $teacher[1], DB_ITEM_COURSE_ID => $course[1], 'list_by' => $categories[2] ?? 0);
 }
 
 function getStatistics(): array

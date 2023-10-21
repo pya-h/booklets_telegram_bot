@@ -1,4 +1,6 @@
 <?php
+require_once './config.php';
+
 // TELEGRAM API GENERAL CONSTANTS
 defined('FILE_ID') or define('FILE_ID', 'file_id');
 defined('TEXT_TAG') or define('TEXT_TAG', 'text');
@@ -39,8 +41,7 @@ defined('METH_DELETE_MESSAGE') or define('METH_DELETE_MESSAGE', 'deleteMessage')
 defined('METH_GET_CHAT_MEMBER') or define('METH_GET_CHAT_MEMBER', 'getChatMember');
 
 // BOT SPECIFIC CONSTANTS
-defined('TOKEN') or define('TOKEN', 'telegramBotToken');
-defined('URL_BASE') or define('URL_BASE', 'https://api.telegram.org/bot' . TOKEN . '/');
+defined('URL_BASE') or define('URL_BASE', "https://api.telegram.org/bot". TOKEN . "/");
 
 defined('BACKUP_CHANNEL_ID') or define('BACKUP_CHANNEL_ID', '-1001724496283');
 

@@ -42,13 +42,13 @@ function addBooklet(&$user, array &$file): array
     $err = null; $item_id = null;
     if(isset($file[FILE_ID]) && isset($file['tag'])) {
         // now its ready for insertion
-        $fields = implode(',', array(DB_BOOKLETS_TEACHER_ID, DB_BOOKLETS_COURSE_ID, DB_BOOKLETS_FILE_ID, DB_BOOKLETS_CAPTION, DB_BOOKLETS_INDEX, DB_BOOKLETS_TYPE));
+        $fields = implode(',', array(DB_ITEM_TEACHER_ID, DB_ITEM_COURSE_ID, DB_BOOKLETS_FILE_ID, DB_BOOKLETS_CAPTION, DB_BOOKLETS_INDEX, DB_BOOKLETS_TYPE));
         // separate index and caption
         $identifiers = extractBookletIndexAndCaption($file[CAPTION_TAG]);
         $item_id = Database::getInstance()->insert(
             'INSERT INTO ' . DB_TABLE_BOOKLETS . " ($fields)" . ' VALUES (:teacher_id, :course_id, :file_id, :caption, :index, :type)',
-                array('teacher_id' => $categories[DB_BOOKLETS_TEACHER_ID],
-                    'course_id' => $categories[DB_BOOKLETS_COURSE_ID], 'file_id' => $file[FILE_ID],
+                array('teacher_id' => $categories[DB_ITEM_TEACHER_ID],
+                    'course_id' => $categories[DB_ITEM_COURSE_ID], 'file_id' => $file[FILE_ID],
                     'caption' => $identifiers[1], 'index' => $identifiers[0], 'type' => $file['tag'])
         );
         if(!$item_id || !resetAction($user[DB_USER_ID]))
@@ -78,7 +78,7 @@ function backupBooklet(&$user, ?string $new_caption = null): ?string
     if($booklet && count($booklet)) {
         // save current booklet's teacher id and course id, for next upload
         setActionAndCache($user[DB_USER_ID], ACTION_SENDING_BOOKLET_FILE,
-                makeCatgeoryString($booklet[0][DB_BOOKLETS_COURSE_ID], $booklet[0][DB_BOOKLETS_TEACHER_ID]));
+                makeCatgeoryString($booklet[0][DB_ITEM_COURSE_ID], $booklet[0][DB_ITEM_TEACHER_ID]));
         // send to channel
         callMethod(
             'send' . ucfirst($booklet[0][DB_BOOKLETS_TYPE]),
@@ -96,4 +96,10 @@ function changeBookletFile($booklet_id, array $file) {
         return null;
     return Database::getInstance()->update('UPDATE ' . DB_TABLE_BOOKLETS . ' SET ' . DB_BOOKLETS_FILE_ID . '=:file_id, ' . DB_BOOKLETS_TYPE . '=:type WHERE ' . DB_ITEM_ID . '=:id',
             array('id' => $booklet_id, 'file_id' => $file[FILE_ID], 'type' => $file['tag']));
+}
+
+function getTeachersName($teacher_id) {
+    $names = Database::getInstance()->query('SELECT (' . DB_ITEM_NAME . ') FROM '. DB_TABLE_TEACHERS
+         .' WHERE ' . DB_ITEM_ID . '=:id LIMIT 1', array('id' => $teacher_id), DB_ITEM_NAME);
+    return $names[0] ?? null;
 }

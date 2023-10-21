@@ -11,15 +11,18 @@ defined('ACTION_ADD_TEACHER') or define('ACTION_ADD_TEACHER', 5); // EXTRA ACTIO
 defined('ACTION_WHISPER_GODS_NAME') or define('ACTION_WHISPER_GODS_NAME', 6); 
 defined('ACTION_WHISPER_GODS_SECRET') or define('ACTION_WHISPER_GODS_SECRET', 7);
 defined('ACTION_SELECT_BOOKLET_TO_GET') or define('ACTION_SELECT_BOOKLET_TO_GET', 8);
-defined('ACTION_WRITE_MESSAGE_TO_ADMIN') or define('ACTION_WRITE_MESSAGE_TO_ADMIN', 9);
+defined('ACTION_WRITE_MESSAGE') or define('ACTION_WRITE_MESSAGE', 9);
 defined('ACTION_WRITE_REPLY_TO_USER') or define('ACTION_WRITE_REPLY_TO_USER', 10);
 defined('ACTION_ADD_ADMIN') or define('ACTION_ADD_ADMIN', 11);
+defined('ACTION_REMOVE_ADMIN') or define('ACTION_REMOVE_ADMIN', -1);
 defined('ACTION_ASSIGN_USER_NAME') or define('ACTION_ASSIGN_USER_NAME', 12);
 defined('ACTION_SET_BOOKLET_CAPTION') or define('ACTION_SET_BOOKLET_CAPTION', 13);
 defined('ACTION_EDIT_BOOKLET_CAPTION') or define('ACTION_EDIT_BOOKLET_CAPTION', 14);
 defined('ACTION_SELECT_BOOKLET_TO_EDIT') or define('ACTION_SELECT_BOOKLET_TO_EDIT', 15);
-defined('ACTION_EDIT_BOOKLET_FILE') or define('ACTION_EDIT_BOOKLET_FILE', 17);
 defined('ACTION_SEND_POST_TO_CHANNEL') or define('ACTION_SEND_POST_TO_CHANNEL', 16);
+defined('ACTION_EDIT_BOOKLET_FILE') or define('ACTION_EDIT_BOOKLET_FILE', 17);
+defined('ACTION_LINK_TEACHER') or define('ACTION_LINK_TEACHER', 18);
+defined('ACTION_SELECT_TEACHER_TO_CONTACT') or define('ACTION_SELECT_TEACHER_TO_CONTACT', 19);
 
 function getSuperiors(): ?array
 {
@@ -31,6 +34,11 @@ function getSuperiors(): ?array
 function getCertainUsers(int $user_mode): ?array {
     return Database::getInstance()->query('SELECT * FROM '. DB_TABLE_USERS 
         .' WHERE ' . DB_USER_MODE . '=:mode', array('mode' => $user_mode));
+}
+
+function getTeacherGroup($teacher_id): ?array {
+    return Database::getInstance()->query('SELECT * FROM '. DB_TABLE_USERS 
+        .' WHERE ' . DB_ITEM_TEACHER_ID . '=:teacher_id', array('teacher_id' => $teacher_id));
 }
 
 function getUser($id): array{
@@ -57,9 +65,17 @@ function updateAction($id, int $action, bool $reset_cache = false) {
 }
 
 
-function updateUserMode($id, int $mode) {
-    return Database::getInstance()->update('UPDATE ' . DB_TABLE_USERS . ' SET ' . DB_USER_MODE . '=:mode WHERE ' . DB_USER_ID . '=:id',
-        array('id' => $id, 'mode' => $mode));
+function updateUserMode($id, int $mode, $teacher_id=null, ?string $predefined_name=null, $course_id=null) {
+    $query = 'UPDATE ' . DB_TABLE_USERS . ' SET ' . DB_USER_MODE . '=:mode';
+    $params = array('id' => $id, 'mode' => $mode);
+    if($teacher_id) {
+        $params['teacher_id'] = $teacher_id;
+        $query .= ", " . DB_ITEM_TEACHER_ID . "=:teacher_id, " . DB_ITEM_NAME . "=:name";
+        $params['name'] = $predefined_name ?? 'بدون نام';
+    }
+    // TODO: what about course_id ?hmmm...
+    $query .= 'WHERE ' . DB_USER_ID . '=:id';
+    return Database::getInstance()->update($query, $params);
 }
 
 function updateActionCache($id, $cache) {
@@ -78,10 +94,12 @@ function resetAction($id): bool
     return updateAction($id, ACTION_NONE, true);
 }
 
-function saveMessage($sender_id, $message_id) {
-    Database::getInstance()->insert('INSERT INTO '. DB_TABLE_MESSAGES 
-        . ' (' . DB_ITEM_ID . ', ' . DB_MESSAGES_SENDER_ID . ') VALUES (:message_id, :sender_id)', array(
-            MESSAGE_ID_TAG => $message_id, 'sender_id' => $sender_id
+function saveMessage($sender_id, $message_id, ?int $target_group=null) {
+    $fields = implode(',', [DB_ITEM_ID, DB_MESSAGES_SENDER_ID, DB_MESSAGES_TARGET_GROUP]);
+    $target_value = $target_group ? ":target" : "NULL";
+    return Database::getInstance()->insert('INSERT INTO '. DB_TABLE_MESSAGES 
+        . " ($fields) VALUES (:message_id, :sender_id, $target_value)", array(
+            'message_id' => $message_id, 'sender_id' => $sender_id, 'target' => $target_group
     ));
 }
 

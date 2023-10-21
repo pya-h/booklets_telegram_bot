@@ -11,29 +11,32 @@ defined('CMD_UPLOAD_BOOKLET') or define('CMD_UPLOAD_BOOKLET', 'آپلود جزو
 defined('CMD_EDIT_BOOKLET') or define('CMD_EDIT_BOOKLET', 'ویرایش');
 defined('CMD_EDIT_BOOKLET_CAPTION') or define('CMD_EDIT_BOOKLET_CAPTION', 'ویرایش کپشن');
 defined('CMD_EDIT_BOOKLET_FILE') or define('CMD_EDIT_BOOKLET_FILE', 'ویرایش فایل');
-defined('CMD_STATISTICS') or define('CMD_STATISTICS', 'آمار ربات');
+defined('CMD_STATISTICS') or define('CMD_STATISTICS', 'آمار');
 defined('CMD_SEND_POST_TO_CHANNEL') or define('CMD_SEND_POST_TO_CHANNEL', 'ارسال پست');
 defined('CMD_ADD_ADMIN') or define('CMD_ADD_ADMIN', 'افزودن ادمین');
 defined('CMD_REMOVE_ADMIN') or define('CMD_REMOVE_ADMIN', 'حذف ادمین');
+defined('CMD_LINK_TEACHER') or define('CMD_LINK_TEACHER', 'لینک اکانت استاد');
+defined('CMD_INTRODUCE_TA') or define('CMD_INTRODUCE_TA', 'معرفی TA');
 
 defined('CMD_DOWNLOAD_BY_COURSE') or define('CMD_DOWNLOAD_BY_COURSE', 'جست و جو بر اساس نام درس📖');
 defined('CMD_DOWNLOAD_BY_TEACHER') or define('CMD_DOWNLOAD_BY_TEACHER', 'جست و جو بر اساس نام استاد👨‍🏫');
 defined('CMD_DOWNLOAD_BOOKLET') or define('CMD_DOWNLOAD_BOOKLET', 'دانلود جزوه📖');
 defined('CMD_MESSAGE_TO_ADMIN') or define('CMD_MESSAGE_TO_ADMIN', 'پشتیبانی 💬');
+defined('CMD_MESSAGE_TO_TEACHER') or define('CMD_MESSAGE_TO_TEACHER', 'ارتباط با استاد 👨‍🏫');
 
 defined('CMD_MAIN_MENU') or define('CMD_MAIN_MENU', 'بازگشت به منو ↪️');
 
 defined('CMD_GOD_ACCESS') or define('CMD_GOD_ACCESS', '/godAccess');
 
-function alignButtons(array &$items, string $related_column, string $data_prefix): array
+function alignButtons(array &$items, string $related_column, string $data_prefix, string $callback_data_index=DB_ITEM_ID): array
 {
     $buttons = array(array()); // an inline keyboard
     $current_row = 0;
     $column_length = 0;
     foreach($items as $item) {
         array_unshift($buttons[$current_row], array(
-            TEXT_TAG => $item[$related_column] ? $item[$related_column] : $item[DB_ITEM_ID],
-            CALLBACK_DATA => $data_prefix . $item[DB_ITEM_ID]
+            TEXT_TAG => $item[$related_column] ? $item[$related_column] : $item[$callback_data_index],
+            CALLBACK_DATA => $data_prefix . $item[$callback_data_index]
         ));
         // buttons callback_data is as: type/id, type determines whether it's a course or a teacher;
         $column_length += strlen($item[$related_column]);
@@ -71,12 +74,20 @@ function createMenu(string $table_name, ?string $previous_data = null, ?string $
     return array(INLINE_KEYBOARD => alignButtons($items, DB_ITEM_NAME, $data_prefix));
 }
 
+function createUserList(string $filter_query, string $filter_index = DB_USER_ID): ?array
+{
+    $items = Database::getInstance()->query('SELECT * FROM ' . DB_TABLE_USERS . ' WHERE ' . $filter_query);
+    if(!$items || !count($items))
+        return null;
+    return array(INLINE_KEYBOARD => alignButtons($items, DB_ITEM_NAME, DB_TABLE_USERS . RELATED_DATA_SEPARATOR, $filter_index));
+}
+
 function createIndexMenu(array &$booklets, bool $by_caption = false, bool $all_items_option = true): array
 {
     $menu_keyboard = alignButtons($booklets, !$by_caption ? DB_BOOKLETS_INDEX : DB_BOOKLETS_CAPTION, DB_ITEM_ID . '=');
     if($all_items_option)
         $menu_keyboard[] = array(
-            array(TEXT_TAG => 'همه', CALLBACK_DATA => DB_BOOKLETS_TEACHER_ID . '=' . $booklets[0][DB_BOOKLETS_TEACHER_ID] . ' AND ' . DB_BOOKLETS_COURSE_ID . '=' . $booklets[0][DB_BOOKLETS_COURSE_ID])
+            array(TEXT_TAG => 'همه', CALLBACK_DATA => DB_ITEM_TEACHER_ID . '=' . $booklets[0][DB_ITEM_TEACHER_ID] . ' AND ' . DB_ITEM_COURSE_ID . '=' . $booklets[0][DB_ITEM_COURSE_ID])
         );
     return array(INLINE_KEYBOARD => $menu_keyboard);
 }
@@ -84,15 +95,19 @@ function createIndexMenu(array &$booklets, bool $by_caption = false, bool $all_i
 function getMainMenu(int $user_mode): array
 {
     $keyboard = array('resize_keyboard' => true, 'one_time_keyboard' => true,
-        'keyboard' => $user_mode == NORMAL_USER
-                ? array(array(CMD_MESSAGE_TO_ADMIN, CMD_DOWNLOAD_BOOKLET))
-                : array(
-                    array(CMD_DOWNLOAD_BOOKLET, CMD_UPLOAD_BOOKLET), // casual keyboard
-                    array(CMD_ADD_COURSE, CMD_ADD_TEACHER, CMD_EDIT_BOOKLET),
-                    array(CMD_STATISTICS, CMD_SEND_POST_TO_CHANNEL)
-                ));
+        'keyboard' => $user_mode == ADMIN_USER || $user_mode == GOD_USER ?
+                        array(
+                            array(CMD_DOWNLOAD_BOOKLET, CMD_STATISTICS, CMD_UPLOAD_BOOKLET), // casual keyboard
+                            array(CMD_LINK_TEACHER, CMD_SEND_POST_TO_CHANNEL),
+                            array(CMD_ADD_COURSE, CMD_ADD_TEACHER, CMD_EDIT_BOOKLET),
+                        )
+                    : array(array(CMD_MESSAGE_TO_ADMIN, CMD_DOWNLOAD_BOOKLET))
+    );
+    $keyboard['keyboard'][] = array(CMD_MESSAGE_TO_TEACHER);
     if($user_mode == GOD_USER)
         $keyboard['keyboard'][] = array(CMD_REMOVE_ADMIN, CMD_ADD_ADMIN);
+    else if($user_mode == TEACHER_USER)
+        $keyboard['keyboard'][] = array(CMD_INTRODUCE_TA);
     return $keyboard;
 }
 

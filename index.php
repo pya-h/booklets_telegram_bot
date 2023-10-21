@@ -1,4 +1,5 @@
 <?php
+require_once './config.php';
 require_once './telegram_api.php';
 require_once './manage.php';
 
