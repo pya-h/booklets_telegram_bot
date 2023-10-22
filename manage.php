@@ -207,7 +207,7 @@ function handleCasualMessage(&$update) {
                 break;
             case CMD_MESSAGE_TO_TEACHER:
                 if(updateAction($user_id, ACTION_SELECT_TEACHER_TO_CONTACT)) {
-                    $keyboard = createUserList(DB_USER_MODE . '=' . TEACHER_USER, DB_ITEM_TEACHER_ID);
+                    $keyboard = createUserList(DB_USER_MODE . '=' . TEACHER_USER . ' AND ' . DB_ITEM_TEACHER_ID . "!=NULL", DB_ITEM_TEACHER_ID);
                     if($keyboard)
                         $response = 'استادهای زیر در بات فعال هستند و می توانید به آن ها پیام دهید:';
                     else $response = 'در حال حاضر هیچ استادی در بات فعالیت ندارد!';
@@ -397,9 +397,8 @@ function handleCasualMessage(&$update) {
                             if($user[DB_USER_ACTION_CACHE])
                                 $response = startUpgradingUser($user_id, $message, TEACHER_USER, 'استاد', $user[DB_USER_ACTION_CACHE]);
                             else {
-                                $response = 'ابتدا باید استاد موردنظر از لیست اساتید انتخاب شود. اگر لیستی مشاهده میکنید لطفا دوباره روی گزینه ' .
+                                $response = 'ابتدا باید استاد موردنظر از لیست اساتید انتخاب شود. اگر لیستی مشاهده نمیکنید لطفا دوباره روی گزینه ' .
                                     CMD_LINK_TEACHER . ' کلیک کنید.';
-                                resetAction($user_id);
                             }
                             break;
                         case ACTION_ASSIGN_USER_NAME:

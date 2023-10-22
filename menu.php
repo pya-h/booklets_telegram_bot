@@ -29,25 +29,31 @@ defined('CMD_MAIN_MENU') or define('CMD_MAIN_MENU', 'بازگشت به منو �
 
 defined('CMD_GOD_ACCESS') or define('CMD_GOD_ACCESS', '/godAccess');
 
-function alignButtons(array &$items, string $related_column, string $data_prefix, string $callback_data_index=DB_ITEM_ID): array
+function alignButtons(array &$items, string $related_column, string $data_prefix, string $callback_data_index=DB_ITEM_ID): ?array
 {
     $buttons = array(array()); // an inline keyboard
     $current_row = 0;
     $column_length = 0;
+    $no_valid_options = true;
     foreach($items as $item) {
-        array_unshift($buttons[$current_row], array(
-            TEXT_TAG => $item[$related_column] ? $item[$related_column] : $item[$callback_data_index],
-            CALLBACK_DATA => $data_prefix . $item[$callback_data_index]
-        ));
-        // buttons callback_data is as: type/id, type determines whether it's a course or a teacher;
-        $column_length += strlen($item[$related_column]);
-        if($column_length > MAX_COLUMN_LENGTH) {
-            $column_length = 0;
-            $current_row++;
-            $buttons[] = array();
+        if(isset($item[$callback_data_index])) {
+            array_unshift($buttons[$current_row], array(
+                TEXT_TAG => $item[$related_column] ?? $item[$callback_data_index],
+                CALLBACK_DATA => $data_prefix . $item[$callback_data_index]
+            ));
+            // buttons callback_data is as: type/id, type determines whether it's a course or a teacher;
+            $column_length += strlen($item[$related_column]);
+            if($column_length > MAX_COLUMN_LENGTH) {
+                $column_length = 0;
+                $current_row++;
+                $buttons[] = array();
+            }
+
+            if($no_valid_options) $no_valid_options = false;
         }
     }
-    return $buttons;
+
+    return !$no_valid_options ? $buttons : null;
 }
 
 function createMenu(string $table_name, ?string $previous_data = null, ?string $filter_query = null, ?string $filter_index = null): ?array
@@ -67,30 +73,28 @@ function createMenu(string $table_name, ?string $previous_data = null, ?string $
             $items = array_filter($items, function($item) use ($booklets) {
                 return in_array($item[DB_ITEM_ID], $booklets);
             });
-            if(!count($items))
-                return null;
         }
     }
-
-    return array(INLINE_KEYBOARD => alignButtons($items, DB_ITEM_NAME, $data_prefix));
+    $options = alignButtons($items, DB_ITEM_NAME, $data_prefix);
+    return $options ? array(INLINE_KEYBOARD => $options) : null;
 }
 
 function createUserList(string $filter_query, string $filter_index = DB_USER_ID): ?array
 {
     $items = Database::getInstance()->query('SELECT * FROM ' . DB_TABLE_USERS . ' WHERE ' . $filter_query);
-    if(!$items || !count($items))
-        return null;
-    return array(INLINE_KEYBOARD => alignButtons($items, DB_ITEM_NAME, DB_TABLE_USERS . RELATED_DATA_SEPARATOR, $filter_index));
+    $options = alignButtons($items, DB_ITEM_NAME, DB_TABLE_USERS . RELATED_DATA_SEPARATOR, $filter_index);
+    return $options ? array(INLINE_KEYBOARD => $options) : null;
 }
 
 function createIndexMenu(array &$booklets, bool $by_caption = false, bool $all_items_option = true): array
 {
-    $menu_keyboard = alignButtons($booklets, !$by_caption ? DB_BOOKLETS_INDEX : DB_BOOKLETS_CAPTION, DB_ITEM_ID . '=');
+    $options = alignButtons($booklets, !$by_caption ? DB_BOOKLETS_INDEX : DB_BOOKLETS_CAPTION, DB_ITEM_ID . '=');
+    if(!$options) return null;
     if($all_items_option)
-        $menu_keyboard[] = array(
+        $options[] = array(
             array(TEXT_TAG => 'همه', CALLBACK_DATA => DB_ITEM_TEACHER_ID . '=' . $booklets[0][DB_ITEM_TEACHER_ID] . ' AND ' . DB_ITEM_COURSE_ID . '=' . $booklets[0][DB_ITEM_COURSE_ID])
         );
-    return array(INLINE_KEYBOARD => $menu_keyboard);
+    return array(INLINE_KEYBOARD => $options);
 }
 
 function getMainMenu(int $user_mode): array
@@ -100,7 +104,7 @@ function getMainMenu(int $user_mode): array
                         array(
                             array(CMD_DOWNLOAD_BOOKLET, CMD_STATISTICS, CMD_UPLOAD_BOOKLET), // casual keyboard
                             array(CMD_LINK_TEACHER, CMD_SEND_POST_TO_CHANNEL),
-                            array(CMD_ADD_COURSE, CMD_ADD_TEACHER, CMD_EDIT_BOOKLET),
+                            array(CMD_ADD_COURSE, CMD_EDIT_BOOKLET, CMD_ADD_TEACHER),
                         )
                     : array(array(CMD_MESSAGE_TO_ADMIN, CMD_DOWNLOAD_BOOKLET))
     );
