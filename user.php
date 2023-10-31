@@ -24,6 +24,9 @@ defined('ACTION_EDIT_BOOKLET_FILE') or define('ACTION_EDIT_BOOKLET_FILE', 17);
 defined('ACTION_LINK_TEACHER') or define('ACTION_LINK_TEACHER', 18);
 defined('ACTION_SELECT_TEACHER_TO_CONTACT') or define('ACTION_SELECT_TEACHER_TO_CONTACT', 19);
 defined('ACTION_INTRODUCE_TA') or define('ACTION_INTRODUCE_TA', 20);
+defined('ACTION_SEND_NOTIFCATION') or define('ACTION_SEND_NOTIFCATION', 21);
+defined('ACTION_INTRODUCE_TEACHER') or define('ACTION_INTRODUCE_TEACHER', 22);
+defined('ACTION_SEE_TEACHER_BIOS') or define('ACTION_SEE_TEACHER_BIOS', 23);
 
 function getSuperiors(): ?array
 {
@@ -42,19 +45,39 @@ function getTeacherGroup($teacher_id): ?array {
         .' WHERE ' . DB_ITEM_TEACHER_ID . '=:teacher_id', array('teacher_id' => $teacher_id));
 }
 
-function getUser($id): array{
+function getUser($id, string $username=null): array{
     $db = Database::getInstance();
     $user = $db->query('SELECT * FROM '. DB_TABLE_USERS .' WHERE ' . DB_USER_ID . '=:id LIMIT 1',
         array('id' => $id));
+    if(count($user)) {
+        if($username) $username = "@$username";
 
-    if(count($user) == 1)
+        if($username != $user[DB_USER_USERNAME]) {
+            updateUserField($id, $username, DB_USER_USERNAME);
+            $user[0][DB_USER_USERNAME] = $username;
+        }
+    
         return $user[0];
+    }
 
-    $db->insert('INSERT INTO '. DB_TABLE_USERS .' (' . DB_USER_ID . ') VALUES (:id)', array(
-        'id' => $id
-    ));
+    // its a new user
+    $fields = DB_USER_ID;
+    $params = array('id' => $id);
+    $values = ':id';
+    if($username) {
+        $fields .= ',' . DB_USER_USERNAME;
+        $params['username'] = $username;
+        $values .= ", :username";
+    }
+    $db->insert('INSERT INTO '. DB_TABLE_USERS . " ($fields) VALUES ($values)", $params);
     // TODO: error check?
-    return array(DB_USER_ID => $id, DB_USER_MODE => NORMAL_USER, DB_USER_ACTION => ACTION_NONE, DB_USER_ACTION_CACHE => null);
+    return array(DB_USER_ID => $id, DB_USER_MODE => NORMAL_USER, DB_USER_ACTION => ACTION_NONE,
+        DB_USER_ACTION_CACHE => null, DB_USER_USERNAME => $username);
+}
+
+function getAllUsers(bool $get_all_columns=false): array {
+    $columns = !$get_all_columns ? "(" . DB_USER_ID . ")" : "*";
+    return Database::getInstance()->query("SELECT $columns FROM " . DB_TABLE_USERS, null, !$get_all_columns ? DB_USER_ID : null);
 }
 
 function updateAction($id, int $action, bool $reset_cache = false) {
@@ -65,14 +88,16 @@ function updateAction($id, int $action, bool $reset_cache = false) {
         array('id' => $id, 'action' => $action));
 }
 
-
 function updateUserMode($id, int $mode, $teacher_id=null, ?string $predefined_name=null, $course_id=null) {
     $query = 'UPDATE ' . DB_TABLE_USERS . ' SET ' . DB_USER_MODE . '=:mode';
     $params = array('id' => $id, 'mode' => $mode);
     if($teacher_id) {
         $params['teacher_id'] = $teacher_id;
-        $query .= ", " . DB_ITEM_TEACHER_ID . "=:teacher_id, " . DB_ITEM_NAME . "=:name";
-        $params['name'] = $predefined_name ?? 'بدون نام';
+        $query .= ", " . DB_ITEM_TEACHER_ID . "=:teacher_id";
+        if($predefined_name) {
+            $query .= ", " . DB_ITEM_NAME . "=:name";
+            $params['name'] = $predefined_name;
+        }
     }
     // TODO: what about course_id ?hmmm...
     $query .= 'WHERE ' . DB_USER_ID . '=:id';
@@ -81,7 +106,7 @@ function updateUserMode($id, int $mode, $teacher_id=null, ?string $predefined_na
 
 function downgradeUser($id) {
     return Database::getInstance()->update('UPDATE ' . DB_TABLE_USERS . ' SET ' . DB_USER_MODE . '=' . NORMAL_USER
-            . ',' . DB_ITEM_TEACHER_ID . '=NULL WHERE ' . DB_USER_ID . '=:id', array('id' => $id));
+            . ',' . DB_ITEM_TEACHER_ID . '=NULL,' . DB_ITEM_NAME . '=NULL WHERE ' . DB_USER_ID . '=:id', array('id' => $id));
 
 }
 
@@ -103,9 +128,8 @@ function resetAction($id): bool
 
 function saveMessage($sender_id, $message_id, ?int $target_group=null) {
     $fields = implode(',', [DB_ITEM_ID, DB_MESSAGES_SENDER_ID, DB_MESSAGES_TARGET_GROUP]);
-    $target_value = $target_group ? ":target" : "NULL";
     return Database::getInstance()->insert('INSERT INTO '. DB_TABLE_MESSAGES
-        . " ($fields) VALUES (:message_id, :sender_id, $target_value)", array(
+        . " ($fields) VALUES (:message_id, :sender_id, :target)", array(
             'message_id' => $message_id, 'sender_id' => $sender_id, 'target' => $target_group
     ));
 }
@@ -117,7 +141,7 @@ function markMessageAsAnswered($message_id) {
 
 function isMessageAnswered($message_id): bool
 {
-    $msg = Database::getInstance()->query('SELECT (' . DB_MESSAGES_ANSWERED . ') FROM '. DB_TABLE_MESSAGES
+    $msg = Database::getInstance()->query('SELECT ' . DB_MESSAGES_ANSWERED . ' FROM '. DB_TABLE_MESSAGES
          .' WHERE ' . DB_ITEM_ID . '=:id LIMIT 1', array('id' => $message_id), DB_MESSAGES_ANSWERED);
     return count($msg) > 0 && $msg[0];
 }
@@ -128,7 +152,19 @@ function getMessage($message_id) {
     return count($msg) ? $msg[0] : null;
 }
 
-function assignUserName($id, string &$name) {
-    return Database::getInstance()->update('UPDATE ' . DB_TABLE_USERS . ' SET ' . DB_ITEM_NAME . '=:name WHERE ' . DB_USER_ID . '=:id',
-        array('id' => $id, 'name' => $name));
+function updateUserField($id, string $value, $field=DB_ITEM_NAME) {
+    $value_tag = $value ? ":value" : "NULL";
+    return Database::getInstance()->update('UPDATE ' . DB_TABLE_USERS . " SET $field=$value_tag WHERE " . DB_USER_ID . '=:id',
+        array('id' => $id, 'value' => $value));
+}
+
+function findByUsername(string &$username): ?string {
+    if($username && strlen($username)) {
+        if($username[0] != '@') $username = "@$username";
+        $user = Database::getInstance()->query(
+                'SELECT ' . DB_USER_ID . ' FROM '. DB_TABLE_USERS .' WHERE ' . DB_USER_USERNAME . '=:username LIMIT 1',
+            array('username' => $username), DB_USER_ID);
+        return count($user) ? $user[0] : null;
+    }
+    return null;
 }

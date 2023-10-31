@@ -98,8 +98,59 @@ function changeBookletFile($booklet_id, array $file) {
             array('id' => $booklet_id, 'file_id' => $file[FILE_ID], 'type' => $file['tag']));
 }
 
-function getTeachersName($teacher_id) {
-    $names = Database::getInstance()->query('SELECT (' . DB_ITEM_NAME . ') FROM '. DB_TABLE_TEACHERS
-         .' WHERE ' . DB_ITEM_ID . '=:id LIMIT 1', array('id' => $teacher_id), DB_ITEM_NAME);
-    return $names[0] ?? null;
+function getTeachersField($teacher_id, string $field=DB_ITEM_NAME) {
+    $values = Database::getInstance()->query("SELECT $field FROM " . DB_TABLE_TEACHERS
+         .' WHERE ' . DB_ITEM_ID . '=:id LIMIT 1', array('id' => $teacher_id), $field);
+    return $values[0] ?? null;
+}
+
+function getBooklets(string $filter='1=1') {
+    $db = Database::getInstance();
+    $db->update('UPDATE ' . DB_TABLE_BOOKLETS . ' SET ' . DB_BOOKLETS_DOWNLOADS . '=' . DB_BOOKLETS_DOWNLOADS . " + 1 WHERE $filter");
+    return $db->query('SELECT * FROM '. DB_TABLE_BOOKLETS . " WHERE $filter");
+}
+
+function introduceTeacher($teacher_id, ?string $bio=null) {
+    return Database::getInstance()->update('UPDATE ' . DB_TABLE_TEACHERS . " SET " . DB_TEACHER_BIO . "=:bio WHERE " . DB_ITEM_ID . '=:teacher_id',
+        array('teacher_id' => $teacher_id, 'bio' => $bio));
+}
+
+function getDownloadSatistics($teacher_id=null, $course_id=null, $booklet_id=null): int {
+    $conditions = [];
+    if($booklet_id) {
+        $conditions[] = DB_ITEM_ID . "=$booklet_id";
+    } else {
+        if($teacher_id) $conditions[] = DB_ITEM_TEACHER_ID . "=$teacher_id";
+        if($course_id)  $conditions[] = DB_ITEM_COURSE_ID . "=$course_id";
+    }
+    $condition = implode(' AND ', $conditions);
+    
+    $result = Database::getInstance()->query("SELECT SUM(" . DB_BOOKLETS_DOWNLOADS .") AS TOTAL FROM " . DB_TABLE_BOOKLETS . " WHERE $condition");
+    return $result[0]['TOTAL'] ?? 0;
+}
+
+function getCourseName($course_id) {
+    $values = Database::getInstance()->query("SELECT " . DB_ITEM_NAME . " FROM " . DB_TABLE_COURSES
+         .' WHERE ' . DB_ITEM_ID . '=:id LIMIT 1', array('id' => $course_id), DB_ITEM_NAME);
+    return $values[0] ?? null;
+}
+
+function &getTeachersFullDownloadStats($teacher_id): string {
+    $teachers_booklets = Database::getInstance()->query("SELECT " . DB_BOOKLETS_DOWNLOADS . ", " . DB_ITEM_COURSE_ID . " FROM " 
+        . DB_TABLE_BOOKLETS . " WHERE " . DB_ITEM_TEACHER_ID . "=$teacher_id");
+    $courses = array();
+    foreach($teachers_booklets as &$booklet) {
+        if(!isset($courses[DB_ITEM_COURSE_ID])) {
+            $courses[DB_ITEM_COURSE_ID] = array(
+                'name' => getCourseName($booklet[DB_ITEM_COURSE_ID]) ?? "بدون عنوان!",
+                'downloads' => 0
+            );
+        }
+        $courses[DB_ITEM_COURSE_ID]['downloads'] += $booklet[DB_BOOKLETS_DOWNLOADS];
+    }
+    $stats = "تعداد دانلود جزوات شما:\n\n";
+    foreach($courses as &$course) {
+        $stats .= $course['name'] . ": " . $course['downloads'] . "\n";
+    }
+    return $stats;
 }

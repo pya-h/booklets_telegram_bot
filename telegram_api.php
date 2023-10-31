@@ -91,3 +91,8 @@ function getFileFrom(array &$message): ?array
     }
     return null;
 }
+
+function extractFromSentMessage(string &$telegram_response, string $field=MESSAGE_ID_TAG) {
+    $channel_response = json_decode($telegram_response, true);
+    return $channel_response['result'][$field] ?? null;
+}
