@@ -572,7 +572,7 @@ function handleCasualMessage(&$update) {
         CHAT_ID, $chat_id,
         TEXT_TAG, $response ?? "متوجه نشدم! لطفا دوباره تلاش کنید...",
         'reply_to_message_id', $message_id,
-        KEYBOARD, $keyboard ?? getMainMenu($user[DB_USER_MODE])
+        KEYBOARD, $keyboard ?? getMainMenu($user[DB_USER_MODE] ?? 0)
     );
 }
 
@@ -604,16 +604,23 @@ function handleCallbackQuery(&$update) {
         } else {
             // $callback_data here is actually the sql conditions
             $downloads = 0;
-            foreach(getBooklets($data) as &$booklet) {
-                $downloads += $booklet[DB_BOOKLETS_DOWNLOADS];
-                callMethod(
-                    'send' . ucfirst($booklet[DB_BOOKLETS_TYPE]),
-                    CHAT_ID, $chat_id,
-                    $booklet[DB_BOOKLETS_TYPE], $booklet[DB_BOOKLETS_FILE_ID],
-                    CAPTION_TAG, $booklet[DB_BOOKLETS_INDEX] . ': '. $booklet[DB_BOOKLETS_CAPTION]
-                );
-            }
-            $answer = appendStatsToMessage('جزوه (ها)ی مورد نظر شما:', $downloads);
+            $booklets = getBooklets($data);
+            
+            $teacher = $course = null;
+            if(count($booklets)) { // at least has one booklet
+                $teacher = $booklets[0]['teacher'];
+                $course = $booklets[0]['course'];
+                foreach($booklets as &$booklet) {
+                    $downloads += $booklet[DB_BOOKLETS_DOWNLOADS];
+                    callMethod(
+                        'send' . ucfirst($booklet[DB_BOOKLETS_TYPE]),
+                        CHAT_ID, $chat_id,
+                        $booklet[DB_BOOKLETS_TYPE], $booklet[DB_BOOKLETS_FILE_ID],
+                        CAPTION_TAG, $booklet[DB_BOOKLETS_INDEX] . ': '. $booklet[DB_BOOKLETS_CAPTION]
+                    );
+                }
+            } 
+            $answer = appendStatsToMessage('جزوه (ها)ی انتخابی درس ' . $course . ' - استاد ' . $teacher . "\n", $downloads);
             resetAction($user_id);
         }
     } else if($user[DB_USER_ACTION] == ACTION_SET_BOOKLET_CAPTION) {
@@ -666,15 +673,12 @@ function handleCallbackQuery(&$update) {
                     if(isset($categories['err']))
                         $answer = $categories['err'];
                     else {
-                        $booklets = Database::getInstance()->query(
-                            'SELECT * FROM '. DB_TABLE_BOOKLETS .' WHERE ' . DB_ITEM_TEACHER_ID . '=:teacher_id AND '
-                                . DB_ITEM_COURSE_ID . '=:course_id', array(
-                                    'teacher_id' => $categories[DB_ITEM_TEACHER_ID], 'course_id' => $categories[DB_ITEM_COURSE_ID]
-                            )
+                        $booklets = getBooklets(
+                            selectBookletByCategoriesCondition($categories[DB_ITEM_TEACHER_ID], $categories[DB_ITEM_COURSE_ID])
                         );
-                        if(count($booklets)) {
+                        if(isset($booklets[0])) {
                             // if there is some booklets
-                            $answer = 'جزوه ی موردنظرتو از لیست زیر انتخاب کن:';
+                            $answer = 'استاد ' . $booklets[0]['teacher'] . ' - ' . $booklets[0]['course'] . "\n\n جزوه ی موردنظرتو از لیست زیر انتخاب کن:";
                             if($user[DB_USER_ACTION] == ACTION_DOWNLOAD_BOOKLET) {
                                 if(updateAction($user_id, ACTION_SELECT_BOOKLET_TO_GET)) {
                                     $keyboard = createIndexMenu($booklets, $categories['list_by']);
@@ -789,7 +793,7 @@ function handleCallbackQuery(&$update) {
                 case DB_TABLE_COURSES:
                     $answer = 'از بین اساتید ارائه کننده این درس استاد مورد نظر خود را انتخاب کنید:';
                     if($user[DB_USER_ACTION] == ACTION_DOWNLOAD_BOOKLET) {
-                        createMenu(DB_TABLE_TEACHERS, $data, DB_ITEM_COURSE_ID . "=$params[1]", DB_ITEM_TEACHER_ID);
+                        $keyboard = createMenu(DB_TABLE_TEACHERS, $data, DB_ITEM_COURSE_ID . "=$params[1]", DB_ITEM_TEACHER_ID);
                         if(($user[DB_USER_MODE] == ADMIN_USER || $user[DB_USER_MODE] == GOD_USER) && $keyboard) 
                             $answer = appendStatsToMessage($answer, getDownloadSatistics(null, $params[1]));
                     } else

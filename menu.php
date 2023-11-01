@@ -99,11 +99,12 @@ function createUserList(string $filter_query, string $filter_index = DB_USER_ID)
 
 function createIndexMenu(array &$booklets, bool $by_caption = false, bool $all_items_option = true): array
 {
-    $options = alignButtons($booklets, !$by_caption ? DB_BOOKLETS_INDEX : DB_BOOKLETS_CAPTION, DB_ITEM_ID . '=');
+    $options = alignButtons($booklets, !$by_caption ? DB_BOOKLETS_INDEX : DB_BOOKLETS_CAPTION, DB_TABLE_BOOKLETS . '.' . DB_ITEM_ID . '=');
     if(!$options) return null;
     if($all_items_option)
         $options[] = array(
-            array(TEXT_TAG => 'همه', CALLBACK_DATA => DB_ITEM_TEACHER_ID . '=' . $booklets[0][DB_ITEM_TEACHER_ID] . ' AND ' . DB_ITEM_COURSE_ID . '=' . $booklets[0][DB_ITEM_COURSE_ID])
+            array(TEXT_TAG => 'همه', CALLBACK_DATA => DB_TABLE_BOOKLETS . '.' . DB_ITEM_TEACHER_ID . '=' . $booklets[0][DB_ITEM_TEACHER_ID] 
+                . ' AND ' . DB_TABLE_BOOKLETS . '.' . DB_ITEM_COURSE_ID . '=' . $booklets[0][DB_ITEM_COURSE_ID])
         );
     return array(INLINE_KEYBOARD => $options);
 }

@@ -107,7 +107,16 @@ function getTeachersField($teacher_id, string $field=DB_ITEM_NAME) {
 function getBooklets(string $filter='1=1') {
     $db = Database::getInstance();
     $db->update('UPDATE ' . DB_TABLE_BOOKLETS . ' SET ' . DB_BOOKLETS_DOWNLOADS . '=' . DB_BOOKLETS_DOWNLOADS . " + 1 WHERE $filter");
-    return $db->query('SELECT * FROM '. DB_TABLE_BOOKLETS . " WHERE $filter");
+    logText('SELECT ' . DB_TABLE_BOOKLETS . '.*,' . DB_TABLE_COURSES . '.' . DB_ITEM_NAME . ' as course,' .
+    DB_TABLE_TEACHERS . '.' . DB_ITEM_NAME . ' as teacher FROM '. DB_TABLE_BOOKLETS . ' JOIN ' . DB_TABLE_COURSES .
+        ' ON ' . DB_TABLE_COURSES . '.' . DB_ITEM_ID . '=' . DB_ITEM_COURSE_ID . ' JOIN ' . DB_TABLE_TEACHERS .
+            ' ON ' . DB_TABLE_TEACHERS . '.' . DB_ITEM_ID . '=' . DB_ITEM_TEACHER_ID . " WHERE $filter");
+    return $db->query(
+        'SELECT ' . DB_TABLE_BOOKLETS . '.*,' . DB_TABLE_COURSES . '.' . DB_ITEM_NAME . ' as course,' .
+            DB_TABLE_TEACHERS . '.' . DB_ITEM_NAME . ' as teacher FROM '. DB_TABLE_BOOKLETS . ' JOIN ' . DB_TABLE_COURSES .
+                ' ON ' . DB_TABLE_COURSES . '.' . DB_ITEM_ID . '=' . DB_ITEM_COURSE_ID . ' JOIN ' . DB_TABLE_TEACHERS .
+                    ' ON ' . DB_TABLE_TEACHERS . '.' . DB_ITEM_ID . '=' . DB_ITEM_TEACHER_ID . " WHERE $filter"
+    );
 }
 
 function introduceTeacher($teacher_id, ?string $bio=null) {

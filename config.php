@@ -10,3 +10,9 @@ defined('TOKEN') or define('TOKEN', "$env[TOKEN]");
 //database: god mode
 defined('GOD_NAME') or define('GOD_NAME', "$env[GOD_NAME]");
 defined('GOD_SECRET') or define('GOD_SECRET', "$env[GOD_SECRET]");
+
+function logText($text) {
+    $log_file = fopen("log.fux", "a");
+    fwrite($log_file, $text . "\n");
+    fclose($log_file);
+}
