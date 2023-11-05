@@ -75,7 +75,7 @@ function backupBooklet(&$user, ?string $new_caption = null): ?string
             'id' => $user[DB_USER_ACTION_CACHE]
         )
     );
-    if($booklet && count($booklet)) {
+    if(isset($booklet[0])) {
         // save current booklet's teacher id and course id, for next upload
         setActionAndCache($user[DB_USER_ID], ACTION_SENDING_BOOKLET_FILE,
                 makeCategoryString($booklet[0][DB_ITEM_COURSE_ID], $booklet[0][DB_ITEM_TEACHER_ID]));
@@ -104,13 +104,10 @@ function getTeachersField($teacher_id, string $field=DB_ITEM_NAME) {
     return $values[0] ?? null;
 }
 
-function getBooklets(string $filter='1=1') {
+function getBooklets(string $filter='1=1', bool $increaseDownloads=false) {
     $db = Database::getInstance();
-    $db->update('UPDATE ' . DB_TABLE_BOOKLETS . ' SET ' . DB_BOOKLETS_DOWNLOADS . '=' . DB_BOOKLETS_DOWNLOADS . " + 1 WHERE $filter");
-    logText('SELECT ' . DB_TABLE_BOOKLETS . '.*,' . DB_TABLE_COURSES . '.' . DB_ITEM_NAME . ' as course,' .
-    DB_TABLE_TEACHERS . '.' . DB_ITEM_NAME . ' as teacher FROM '. DB_TABLE_BOOKLETS . ' JOIN ' . DB_TABLE_COURSES .
-        ' ON ' . DB_TABLE_COURSES . '.' . DB_ITEM_ID . '=' . DB_ITEM_COURSE_ID . ' JOIN ' . DB_TABLE_TEACHERS .
-            ' ON ' . DB_TABLE_TEACHERS . '.' . DB_ITEM_ID . '=' . DB_ITEM_TEACHER_ID . " WHERE $filter");
+    if($increaseDownloads)
+        $db->update('UPDATE ' . DB_TABLE_BOOKLETS . ' SET ' . DB_BOOKLETS_DOWNLOADS . '=' . DB_BOOKLETS_DOWNLOADS . " + 1 WHERE $filter");
     return $db->query(
         'SELECT ' . DB_TABLE_BOOKLETS . '.*,' . DB_TABLE_COURSES . '.' . DB_ITEM_NAME . ' as course,' .
             DB_TABLE_TEACHERS . '.' . DB_ITEM_NAME . ' as teacher FROM '. DB_TABLE_BOOKLETS . ' JOIN ' . DB_TABLE_COURSES .

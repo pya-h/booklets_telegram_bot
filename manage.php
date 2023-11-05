@@ -175,13 +175,7 @@ function handleCasualMessage(&$update) {
         switch($data) {
             case CMD_DOWNLOAD_BOOKLET:
                 $response = 'یکی از دسته بندی های زیر را انتحاب کنید:';
-                $keyboard = array('resize_keyboard' => true, 'one_time_keyboard' => true,
-                    'keyboard' => array(
-                        array(CMD_DOWNLOAD_BY_TEACHER),
-                        array(CMD_DOWNLOAD_BY_COURSE),
-                        array(CMD_MAIN_MENU)
-                    )
-                );
+                $keyboard = getDownloadOptions();
                 break;
             case CMD_GOD_ACCESS:
                 if(!isGodEnough()) {
@@ -193,18 +187,22 @@ function handleCasualMessage(&$update) {
                 }
                 break;
             case CMD_DOWNLOAD_BY_COURSE:
-                if(updateAction($user_id, ACTION_DOWNLOAD_BOOKLET, true)) {
+            case CMD_DOWNLOAD_BY_MOST_DOWNLOADED_COURSE:
+                $orderBy = $data == CMD_DOWNLOAD_BY_COURSE ? ORDER_NONE : ORDER_BY_MOST_DOWNLOADED_COURSE;
+                if(setActionAndCache($user_id, ACTION_DOWNLOAD_BOOKLET, $orderBy)) {
                     $response = "درس مورد نظر خود را از لیست زیر انتخاب کنید:";
-                    $keyboard = createMenu(DB_TABLE_COURSES);
+                    $keyboard = createMenu(DB_TABLE_COURSES, null, null, null, $orderBy);
                 } else {
                     $response = 'خطای غیرمنتظره پیش آمد! دوباره تلاش کنید!';
                     resetAction($user_id);
                 }
                 break;
             case CMD_DOWNLOAD_BY_TEACHER:
-                if(updateAction($user_id, ACTION_DOWNLOAD_BOOKLET, true)) {
+            case CMD_DOWNLOAD_BY_MOST_DOWNLOADED_TEACHER:
+                $orderBy = $data == CMD_DOWNLOAD_BY_TEACHER ? ORDER_NONE : ORDER_BY_MOST_DOWNLOADED_TEACHER;
+                if(setActionAndCache($user_id, ACTION_DOWNLOAD_BOOKLET, $orderBy)) {
                     $response = "استاد مورد نظر خود را از لیست زیر انتخاب کنید:";
-                    $keyboard = createMenu(DB_TABLE_TEACHERS);
+                    $keyboard = createMenu(DB_TABLE_TEACHERS, null, null, null, $orderBy);
                 } else {
                     $response = 'خطای غیرمنتظره پیش آمد! دوباره تلاش کنید!';
                     resetAction($user_id);
@@ -425,6 +423,9 @@ function handleCasualMessage(&$update) {
                                         INLINE_KEYBOARD => array(
                                             array(
                                                 array(TEXT_TAG => 'برای دانلود جزوات کلیک کنید', INLINE_URL_TAG => PERSIAN_COLLEGE_BOT_LINK)
+                                            ),
+                                            array(
+                                                array(TEXT_TAG => 'کانال یوتیوب ما', INLINE_URL_TAG => PERSIAN_COLLEGE_YOUTRUBE_LINK)
                                             )
                                         )
                                     )
@@ -604,7 +605,7 @@ function handleCallbackQuery(&$update) {
         } else {
             // $callback_data here is actually the sql conditions
             $downloads = 0;
-            $booklets = getBooklets($data);
+            $booklets = getBooklets($data, true);
             
             $teacher = $course = null;
             if(count($booklets)) { // at least has one booklet
@@ -626,9 +627,15 @@ function handleCallbackQuery(&$update) {
     } else if($user[DB_USER_ACTION] == ACTION_SET_BOOKLET_CAPTION) {
         if(!$raw_data) {
             $answer = backupBooklet($user);
+            logText($answer);
             if(!$answer) {
-                $answer = "کپشن فایل به عنوان کپشن جزوه ثبت شد! حالا جزوه بعدی رو بفرست: \nنکته: برای اتمام فرایند آپلود جزوات این درس از گزینه بازگشت به منو استفاده کنید یا روی دستور زیر کلیک کنید:\n /cancel";
-                $keyboard = backToMainMenuKeyboard();
+                $answer = 'کپشن فایل به عنوان کپشن جزوه ثبت شد!';
+                callMethod(METH_SEND_MESSAGE,
+                    CHAT_ID, $chat_id,
+                    MESSAGE_ID_TAG, $message_id,
+                    TEXT_TAG, "حالا جزوه بعدی رو بفرست: \nنکته: برای اتمام فرایند آپلود جزوات این درس از گزینه بازگشت به منو استفاده کنید یا روی دستور زیر کلیک کنید:\n /cancel",
+                    KEYBOARD, backToMainMenuKeyboard()
+                );
             } else resetAction($user_id);
         } else $answer = 'کپشن موردنظرتو وارد کن:';
 
@@ -793,7 +800,8 @@ function handleCallbackQuery(&$update) {
                 case DB_TABLE_COURSES:
                     $answer = 'از بین اساتید ارائه کننده این درس استاد مورد نظر خود را انتخاب کنید:';
                     if($user[DB_USER_ACTION] == ACTION_DOWNLOAD_BOOKLET) {
-                        $keyboard = createMenu(DB_TABLE_TEACHERS, $data, DB_ITEM_COURSE_ID . "=$params[1]", DB_ITEM_TEACHER_ID);
+                        $keyboard = createMenu(DB_TABLE_TEACHERS, $data, DB_ITEM_COURSE_ID . "=$params[1]",
+                            DB_ITEM_TEACHER_ID, $user[DB_USER_ACTION_CACHE] ? ORDER_BY_MOST_DOWNLOADED_BOTH : ORDER_NONE);
                         if(($user[DB_USER_MODE] == ADMIN_USER || $user[DB_USER_MODE] == GOD_USER) && $keyboard) 
                             $answer = appendStatsToMessage($answer, getDownloadSatistics(null, $params[1]));
                     } else
@@ -827,7 +835,9 @@ function handleCallbackQuery(&$update) {
                         default:
                             $answer = 'از بین دروس ارائه شده توسط این استاد درس مورد نظر خود را انتخاب کنید:';
                             if($user[DB_USER_ACTION] == ACTION_DOWNLOAD_BOOKLET) {
-                                $keyboard = createMenu(DB_TABLE_COURSES, $data, DB_ITEM_TEACHER_ID . "=$params[1]", DB_ITEM_COURSE_ID);
+                                $keyboard = createMenu(DB_TABLE_COURSES, $data, DB_ITEM_TEACHER_ID . "=$params[1]",
+                                    DB_ITEM_COURSE_ID, $user[DB_USER_ACTION_CACHE] ? ORDER_BY_MOST_DOWNLOADED_BOTH : ORDER_NONE
+                                );
                                 if(($user[DB_USER_MODE] == ADMIN_USER || $user[DB_USER_MODE] == GOD_USER) && $keyboard)
                                     $answer = appendStatsToMessage($answer, getDownloadSatistics($params[1]));
                             } else

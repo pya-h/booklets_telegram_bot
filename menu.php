@@ -33,11 +33,20 @@ defined('CMD_GOD_ACCESS') or define('CMD_GOD_ACCESS', '/godAccess');
 // SHARED MENU
 defined('CMD_DOWNLOAD_BY_COURSE') or define('CMD_DOWNLOAD_BY_COURSE', 'جست و جو بر اساس نام درس 📖');
 defined('CMD_DOWNLOAD_BY_TEACHER') or define('CMD_DOWNLOAD_BY_TEACHER', 'جست و جو بر اساس نام استاد 👨‍🏫');
+defined('CMD_DOWNLOAD_BY_MOST_DOWNLOADED_TEACHER') or define('CMD_DOWNLOAD_BY_MOST_DOWNLOADED_TEACHER', 'به ترتیب پردانلودترین استاد 👨‍🏫');
+defined('CMD_DOWNLOAD_BY_MOST_DOWNLOADED_COURSE') or define('CMD_DOWNLOAD_BY_MOST_DOWNLOADED_COURSE', 'به ترتیب پردانلودترین درس 📖');
+
+
 defined('CMD_DOWNLOAD_BOOKLET') or define('CMD_DOWNLOAD_BOOKLET', 'جزوه ها 📖');
 defined('CMD_MESSAGE_TO_ADMIN') or define('CMD_MESSAGE_TO_ADMIN', 'پشتیبانی 💬');
 defined('CMD_MESSAGE_TO_TEACHER') or define('CMD_MESSAGE_TO_TEACHER', 'ارتباط با استاد 💭👨‍🏫');
 defined('CMD_TEACHER_BIOS') or define('CMD_TEACHER_BIOS', 'معارفه 💭👨‍🏫');
 defined('CMD_MAIN_MENU') or define('CMD_MAIN_MENU', 'بازگشت به منو ↪️');
+
+defined('ORDER_NONE') or define('ORDER_NONE', 0);
+defined('ORDER_BY_MOST_DOWNLOADED_TEACHER') or define('ORDER_BY_MOST_DOWNLOADED_TEACHER', 1);
+defined('ORDER_BY_MOST_DOWNLOADED_COURSE') or define('ORDER_BY_MOST_DOWNLOADED_COURSE', 2);
+defined('ORDER_BY_MOST_DOWNLOADED_BOTH') or define('ORDER_BY_MOST_DOWNLOADED_BOTH', 3);
 
 
 function alignButtons(array &$items, string $related_column, string $data_prefix, string $callback_data_index=DB_ITEM_ID, string $other_related_column=null): ?array
@@ -67,14 +76,44 @@ function alignButtons(array &$items, string $related_column, string $data_prefix
     return !$no_valid_options ? $buttons : null;
 }
 
-function createMenu(string $table_name, ?string $previous_data = null, ?string $filter_query = null, ?string $filter_index = null): ?array
+function createMenu(string $table_name, ?string $previous_data = null, ?string $filter_query = null, ?string $filter_index = null, int $order_by=ORDER_NONE): ?array
 {
+    /* ORDER BY QUERY:
+    select * from teachers ORDER BY (SELECT SUM(booklets.downloads) from booklets where booklets.teacher_id=teachers.id)
+    */
     $query = 'SELECT * FROM ' . $table_name;
     if(!$previous_data && $filter_query && !$filter_index) // this condition just happens for remove admin menu
         $query .= ' WHERE ' . $filter_query;
+    else if($order_by && ($table_name == DB_TABLE_COURSES || $table_name == DB_TABLE_TEACHERS)) {
+        $qc = null;
+        if($order_by != ORDER_BY_MOST_DOWNLOADED_BOTH) {
+            $order_conditions = [
+                DB_TABLE_BOOKLETS . '.' . DB_ITEM_TEACHER_ID . '=' . DB_TABLE_TEACHERS . '.' . DB_ITEM_ID,
+                DB_TABLE_BOOKLETS . '.' . DB_ITEM_COURSE_ID . '=' . DB_TABLE_COURSES . '.' . DB_ITEM_ID
+            ];
+            $qc = $order_conditions[$order_by - 1];
+        } else {
+            $params = explode(RELATED_DATA_SEPARATOR, $previous_data);
+            if(count($params) != 2)// sth is wrong
+                return null;
+            // this part is a little twisted, figure it out urself, i dont feel explaning right now
+            
+            $query = "SELECT $table_name." . DB_ITEM_ID . ", $table_name." . DB_ITEM_NAME . ", $params[0]." . DB_ITEM_ID
+                . ' as xid FROM ' . DB_TABLE_TEACHERS . ', ' . DB_TABLE_COURSES . " WHERE $params[0]." . DB_ITEM_ID . "=$params[1]";
+            $qc = DB_TABLE_BOOKLETS . '.' . DB_ITEM_TEACHER_ID . '=' . DB_TABLE_TEACHERS . '.' . DB_ITEM_ID
+                . ' AND ' . DB_TABLE_BOOKLETS . '.' . DB_ITEM_COURSE_ID . '=' . DB_TABLE_COURSES . '.' . DB_ITEM_ID;
+        }
+
+        $query .= ' ORDER BY (SELECT SUM(' . DB_TABLE_BOOKLETS . '.' . DB_BOOKLETS_DOWNLOADS . ') FROM ' . DB_TABLE_BOOKLETS . " WHERE $qc) DESC";
+        // /*commment this*/    logText($query);
+
+    }
+    
     $items = Database::getInstance()->query($query);
 
     $data_prefix = $table_name . RELATED_DATA_SEPARATOR;
+
+    // TODO: EDIT THIS SECTION TO USE ONLY SWL QUERIES
     if($previous_data) {
         $data_prefix = $previous_data . DATA_JOIN_SIGN . $data_prefix;
 
@@ -142,4 +181,16 @@ function backToMainMenuKeyboard(?array $other_options=null): array {
         array_unshift($keyboard['keyboard'], $other_options);
 
     return $keyboard;
+}
+
+function getDownloadOptions(): array {
+    return array('resize_keyboard' => true, 'one_time_keyboard' => true,
+        'keyboard' => [
+            [CMD_DOWNLOAD_BY_TEACHER],
+            [CMD_DOWNLOAD_BY_COURSE],
+            [CMD_DOWNLOAD_BY_MOST_DOWNLOADED_TEACHER],
+            [CMD_DOWNLOAD_BY_MOST_DOWNLOADED_COURSE],
+            [CMD_MAIN_MENU]
+        ]
+    );
 }
