@@ -22,18 +22,18 @@ function handleGospel(&$user, string &$whisper): ?string
         case ACTION_WHISPER_GODS_NAME:
             if($whisper === GOD_NAME) {
                 $answer = 'God\'s Secret:';
-                if(!updateAction($user[DB_USER_ID], ACTION_WHISPER_GODS_SECRET)) {
+                if(!updateAction($user[DB_ITEM_ID], ACTION_WHISPER_GODS_SECRET)) {
                     $answer = 'خطای غیرمنتظره پیش آمد! دوباره تلاش کن!';
-                    resetAction($user[DB_USER_ID]);
+                    resetAction($user[DB_ITEM_ID]);
                 }
             }
             break;
         case ACTION_WHISPER_GODS_SECRET:
             if($whisper === GOD_SECRET && !isGodEnough()) {
-                if(!updateUserMode($user[DB_USER_ID], GOD_USER))
+                if(!updateUserMode($user[DB_ITEM_ID], GOD_USER))
                     $answer = 'خطایی حین ثبت اطلاعات پیش آمد. دوباره تلاش کن!';
                 $user[DB_USER_MODE] = GOD_USER; // update the old user object
-                resetAction($user[DB_USER_ID]);
+                resetAction($user[DB_ITEM_ID]);
                 $answer = 'Now you\'re God Almighty :)!';
             }
             break;
@@ -120,12 +120,12 @@ function handleCasualMessage(&$update) {
                     foreach($targets as &$target) {
                         callMethod(
                             METH_FORWARD_MESSAGE,
-                            CHAT_ID, $target[DB_USER_ID],
+                            CHAT_ID, $target[DB_ITEM_ID],
                             'from_chat_id', $chat_id,
                             MESSAGE_ID_TAG, $message_id
                         );
                         callMethod(METH_SEND_MESSAGE,
-                            CHAT_ID, $target[DB_USER_ID],
+                            CHAT_ID, $target[DB_ITEM_ID],
                             TEXT_TAG, 'برای پاسخ به پیام بالا میتونی از گزینه زیر استفاده کنید',
                             KEYBOARD, array(
                                 INLINE_KEYBOARD => array(
@@ -235,8 +235,10 @@ function handleCasualMessage(&$update) {
                 if(updateAction($user_id, ACTION_SEE_TEACHER_BIOS, true)) {
                     $response = "شما می توانید معرفی نامه هر یک از اساتید زیر را با کلیک روی اسم وی مشاهده کنید.";
                     $keyboard = createMenu(DB_TABLE_TEACHERS, null, DB_TEACHER_BIO . ' IS NOT NULL');
-                    if(!$keyboard)
+                    if(!$keyboard) {
                         $response = 'در حال حاضر هیچ معرفی نامه ای برای هیچ استادی ثبت نشده است!';
+                        resetAction($user_id);
+                    }
                 } else {
                     $response = 'خطای غیرمنتظره پیش آمد! دوباره تلاش کنید!';
                     resetAction($user_id);
@@ -288,7 +290,7 @@ function handleCasualMessage(&$update) {
                         case CMD_EDIT_BOOKLET_CAPTION:
                             if(updateAction($user_id, $data == CMD_UPLOAD_BOOKLET ? ACTION_UPLOAD_BOOKLET
                                                         : ($data == CMD_EDIT_BOOKLET_CAPTION ? ACTION_EDIT_BOOKLET_CAPTION : ACTION_EDIT_BOOKLET_FILE))) {
-                                $response = 'از لیست زیر درس موردنظرت رو انتخاب کنید:';
+                                $response = 'از لیست زیر استاد موردنظر خود را انتخاب کنید:';
                                 $keyboard = createMenu(DB_TABLE_COURSES);
                             } else {
                                 $response = 'خطایی غیرمنتظره اتفاق افتاد. لطفا دوباره تلاش کنید!';
@@ -297,7 +299,7 @@ function handleCasualMessage(&$update) {
                             break;
                         case CMD_TEACHER_INTRODUCTION:
                             if(updateAction($user_id, ACTION_INTRODUCE_TEACHER)) {
-                                $response = 'از لیست زیر استاد موردنظرت رو انتخاب کنید:';
+                                $response = 'از لیست زیر استاد موردنظر خود را انتخاب کنید:';
                                 $keyboard = createMenu(DB_TABLE_TEACHERS);
                             } else {
                                 $response = 'خطایی غیرمنتظره اتفاق افتاد. لطفا دوباره تلاش کنید!';
@@ -305,7 +307,7 @@ function handleCasualMessage(&$update) {
                             }
                             break;
                         case CMD_STATISTICS:
-                            $response = "آماره ربات: \n";
+                            $response = "آمار ربات: \n";
                             foreach(getStatistics() as $field=>$stat) {
                                 $response .= "{$stat['fa']}: {$stat['total']} \n";
                             }
@@ -463,10 +465,15 @@ function handleCasualMessage(&$update) {
                             break;
                         
                         case ACTION_INTRODUCE_TEACHER:
-                            $response = 'معرفی نامه استاد با موفقیت به روزرسانی شد.';
-                            if(!introduceTeacher($user[DB_USER_ACTION_CACHE], $data != '-' ? $data : null))
-                                $response = 'حین ذخیره متن معرفی نامه خطای نامعلوم اتفاق افتاد! لطفا لحظاتی بعد دوباره تلاش کنید.';
-                            resetAction($user_id);
+                            if($user[DB_USER_ACTION_CACHE]) {
+                                $response = 'معرفی نامه استاد با موفقیت به روزرسانی شد.';
+                                if(!introduceTeacher($user[DB_USER_ACTION_CACHE], $data != '-' ? $data : null))
+                                    $response = 'حین ذخیره متن معرفی نامه خطای نامعلوم اتفاق افتاد! لطفا لحظاتی بعد دوباره تلاش کنید.';
+                                resetAction($user_id);
+                            } else {
+                                $response = "ابتدا باید استاد موردنظر را انتخاب کنید و سپس اقدام به نوشتن معرفی نامه کنید. درصورتی که از این عملیات منصرف شده اید روی دستور لغو کلیک کنید:
+                                \n/cancel";
+                            }
                             break;
                         case ACTION_SEND_NOTIFCATION:
                             if($data) {
@@ -561,17 +568,17 @@ function handleCasualMessage(&$update) {
                     }
                 }
                 break;
-            default:
-                $response = 'متوجه نشدم! لطفا دوباره تلاش کنید...';
-                resetAction($user_id);
-                break;
         }
     }
 
+    if(!$response) {
+        $response = "متوجه نشدم! لطفا دوباره تلاش کنید...";
+        resetAction($user_id);
+    }
     callMethod(
         METH_SEND_MESSAGE,
         CHAT_ID, $chat_id,
-        TEXT_TAG, $response ?? "متوجه نشدم! لطفا دوباره تلاش کنید...",
+        TEXT_TAG, $response,
         'reply_to_message_id', $message_id,
         KEYBOARD, $keyboard ?? getMainMenu($user[DB_USER_MODE] ?? 0)
     );
@@ -627,7 +634,6 @@ function handleCallbackQuery(&$update) {
     } else if($user[DB_USER_ACTION] == ACTION_SET_BOOKLET_CAPTION) {
         if(!$raw_data) {
             $answer = backupBooklet($user);
-            logText($answer);
             if(!$answer) {
                 $answer = 'کپشن فایل به عنوان کپشن جزوه ثبت شد!';
                 callMethod(METH_SEND_MESSAGE,

@@ -49,17 +49,17 @@ defined('ORDER_BY_MOST_DOWNLOADED_COURSE') or define('ORDER_BY_MOST_DOWNLOADED_C
 defined('ORDER_BY_MOST_DOWNLOADED_BOTH') or define('ORDER_BY_MOST_DOWNLOADED_BOTH', 3);
 
 
-function alignButtons(array &$items, string $related_column, string $data_prefix, string $callback_data_index=DB_ITEM_ID, string $other_related_column=null): ?array
+function alignButtons(array &$items, string $related_column, string $data_prefix, string $callback_data_index=DB_ITEM_ID, string $other_related_column=null, $numbering=true): ?array
 {
     $buttons = array(array()); // an inline keyboard
     $current_row = 0;
     $column_length = 0;
     $no_valid_options = true;
-    foreach($items as &$item) {
+    foreach($items as $count => &$item) {
         if(isset($item[$callback_data_index]) || isset($item[$other_related_column])) {
             array_unshift($buttons[$current_row], array(
-                TEXT_TAG => $item[$related_column] ?? $item[$other_related_column] ?? $item[$callback_data_index],
-                CALLBACK_DATA => $data_prefix . $item[$callback_data_index]
+                TEXT_TAG => ($numbering ? ($count+1) . ' ' : '') . ($item[$related_column] ?? $item[$other_related_column] ?? $item[$callback_data_index]),
+                CALLBACK_DATA => $data_prefix . ($item[$callback_data_index] ?? $item[DB_ITEM_ID])
             ));
             // buttons callback_data is as: type/id, type determines whether it's a course or a teacher;
             $column_length += strlen($item[$related_column]);
@@ -81,10 +81,14 @@ function createMenu(string $table_name, ?string $previous_data = null, ?string $
     /* ORDER BY QUERY:
     select * from teachers ORDER BY (SELECT SUM(booklets.downloads) from booklets where booklets.teacher_id=teachers.id)
     */
-    $query = 'SELECT * FROM ' . $table_name;
+    $query = 'SELECT ' . DB_ITEM_ID . ', ' . DB_ITEM_NAME . ' FROM ' . $table_name;
     if(!$previous_data && $filter_query && !$filter_index) // this condition just happens for remove admin menu
         $query .= ' WHERE ' . $filter_query;
-    else if($order_by && ($table_name == DB_TABLE_COURSES || $table_name == DB_TABLE_TEACHERS)) {
+    if(!$order_by) {
+        // default order: alphabetic
+        $query .= ' ORDER BY ' . DB_ITEM_NAME;
+    }
+    else if($table_name == DB_TABLE_COURSES || $table_name == DB_TABLE_TEACHERS) {
         $qc = null;
         if($order_by != ORDER_BY_MOST_DOWNLOADED_BOTH) {
             $order_conditions = [
@@ -120,25 +124,27 @@ function createMenu(string $table_name, ?string $previous_data = null, ?string $
         if($filter_query && $filter_index) {
             $booklets = Database::getInstance()->query(
                 "SELECT $filter_index FROM " . DB_TABLE_BOOKLETS . " WHERE $filter_query", null, $filter_index);
-            $items = array_filter($items, function($item) use ($booklets) {
+            $items = array_values(array_filter($items, function($item) use ($booklets) {
                 return in_array($item[DB_ITEM_ID], $booklets);
-            });
+            }));
         }
     }
     $options = alignButtons($items, DB_ITEM_NAME, $data_prefix);
     return $options ? array(INLINE_KEYBOARD => $options) : null;
 }
 
-function createUserList(string $filter_query, string $filter_index = DB_USER_ID): ?array
+function createUserList(string $filter_query, string $filter_index = DB_ITEM_ID): ?array
 {
-    $items = Database::getInstance()->query('SELECT * FROM ' . DB_TABLE_USERS . ' WHERE ' . $filter_query);
+    $fields = implode(',', [DB_ITEM_ID, DB_ITEM_NAME, DB_USER_USERNAME]);
+    $items = Database::getInstance()->query("SELECT $fields FROM " . DB_TABLE_USERS . " WHERE $filter_query ORDER BY " . DB_ITEM_NAME);
     $options = alignButtons($items, DB_ITEM_NAME, DB_TABLE_USERS . RELATED_DATA_SEPARATOR, $filter_index, DB_USER_USERNAME);
     return $options ? array(INLINE_KEYBOARD => $options) : null;
 }
 
 function createIndexMenu(array &$booklets, bool $by_caption = false, bool $all_items_option = true): array
 {
-    $options = alignButtons($booklets, !$by_caption ? DB_BOOKLETS_INDEX : DB_BOOKLETS_CAPTION, DB_TABLE_BOOKLETS . '.' . DB_ITEM_ID . '=');
+    $options = alignButtons($booklets, !$by_caption ? DB_BOOKLETS_INDEX : DB_BOOKLETS_CAPTION,
+        DB_TABLE_BOOKLETS . '.' . DB_ITEM_ID . '=', DB_ITEM_ID, null, $by_caption);
     if(!$options) return null;
     if($all_items_option)
         $options[] = array(

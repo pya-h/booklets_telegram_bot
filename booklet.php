@@ -51,7 +51,7 @@ function addBooklet(&$user, array &$file): array
                     'course_id' => $categories[DB_ITEM_COURSE_ID], 'file_id' => $file[FILE_ID],
                     'caption' => $identifiers[1], 'index' => $identifiers[0], 'type' => $file['tag'])
         );
-        if(!$item_id || !resetAction($user[DB_USER_ID]))
+        if(!$item_id || !resetAction($user[DB_ITEM_ID]))
             $err = 'مشکلی حین ثبت جزوه پیش اومد. لطفا دوباره تلاش کن!';
     } else $err = 'فایل موردنظر به درستی توسط ربات دریافت نشده است. لطفا دوباره تلاش کنید!';
     return array('id' => $item_id, 'err' => $err);
@@ -77,7 +77,7 @@ function backupBooklet(&$user, ?string $new_caption = null): ?string
     );
     if(isset($booklet[0])) {
         // save current booklet's teacher id and course id, for next upload
-        setActionAndCache($user[DB_USER_ID], ACTION_SENDING_BOOKLET_FILE,
+        setActionAndCache($user[DB_ITEM_ID], ACTION_SENDING_BOOKLET_FILE,
                 makeCategoryString($booklet[0][DB_ITEM_COURSE_ID], $booklet[0][DB_ITEM_TEACHER_ID]));
         // send to channel
         callMethod(

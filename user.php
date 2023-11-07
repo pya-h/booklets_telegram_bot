@@ -47,7 +47,7 @@ function getTeacherGroup($teacher_id): ?array {
 
 function getUser($id, string $username=null): array{
     $db = Database::getInstance();
-    $user = $db->query('SELECT * FROM '. DB_TABLE_USERS .' WHERE ' . DB_USER_ID . '=:id LIMIT 1',
+    $user = $db->query('SELECT * FROM '. DB_TABLE_USERS .' WHERE ' . DB_ITEM_ID . '=:id LIMIT 1',
         array('id' => $id));
     if(count($user)) {
         if($username) $username = "@$username";
@@ -61,7 +61,7 @@ function getUser($id, string $username=null): array{
     }
 
     // its a new user
-    $fields = DB_USER_ID;
+    $fields = DB_ITEM_ID;
     $params = array('id' => $id);
     $values = ':id';
     if($username) {
@@ -71,20 +71,20 @@ function getUser($id, string $username=null): array{
     }
     $db->insert('INSERT INTO '. DB_TABLE_USERS . " ($fields) VALUES ($values)", $params);
     // TODO: error check?
-    return array(DB_USER_ID => $id, DB_USER_MODE => NORMAL_USER, DB_USER_ACTION => ACTION_NONE,
+    return array(DB_ITEM_ID => $id, DB_USER_MODE => NORMAL_USER, DB_USER_ACTION => ACTION_NONE,
         DB_USER_ACTION_CACHE => null, DB_USER_USERNAME => $username);
 }
 
 function getAllUsers(bool $get_all_columns=false): array {
-    $columns = !$get_all_columns ? "(" . DB_USER_ID . ")" : "*";
-    return Database::getInstance()->query("SELECT $columns FROM " . DB_TABLE_USERS, null, !$get_all_columns ? DB_USER_ID : null);
+    $columns = !$get_all_columns ? "(" . DB_ITEM_ID . ")" : "*";
+    return Database::getInstance()->query("SELECT $columns FROM " . DB_TABLE_USERS, null, !$get_all_columns ? DB_ITEM_ID : null);
 }
 
 function updateAction($id, int $action, bool $reset_cache = false) {
     $query = 'UPDATE ' . DB_TABLE_USERS . ' SET ' . DB_USER_ACTION . '=:action';
     if($reset_cache)
         $query .= ', ' . DB_USER_ACTION_CACHE . '=NULL';
-    return Database::getInstance()->update("$query WHERE " . DB_USER_ID . '=:id',
+    return Database::getInstance()->update("$query WHERE " . DB_ITEM_ID . '=:id',
         array('id' => $id, 'action' => $action));
 }
 
@@ -100,24 +100,24 @@ function updateUserMode($id, int $mode, $teacher_id=null, ?string $predefined_na
         }
     }
     // TODO: what about course_id ?hmmm...
-    $query .= 'WHERE ' . DB_USER_ID . '=:id';
+    $query .= 'WHERE ' . DB_ITEM_ID . '=:id';
     return Database::getInstance()->update($query, $params);
 }
 
 function downgradeUser($id) {
     return Database::getInstance()->update('UPDATE ' . DB_TABLE_USERS . ' SET ' . DB_USER_MODE . '=' . NORMAL_USER
-            . ',' . DB_ITEM_TEACHER_ID . '=NULL,' . DB_ITEM_NAME . '=NULL WHERE ' . DB_USER_ID . '=:id', array('id' => $id));
+            . ',' . DB_ITEM_TEACHER_ID . '=NULL,' . DB_ITEM_NAME . '=NULL WHERE ' . DB_ITEM_ID . '=:id', array('id' => $id));
 
 }
 
 function updateActionCache($id, $cache) {
-    return Database::getInstance()->update('UPDATE ' . DB_TABLE_USERS . ' SET ' . DB_USER_ACTION_CACHE . '=:cache WHERE ' . DB_USER_ID . '=:id',
+    return Database::getInstance()->update('UPDATE ' . DB_TABLE_USERS . ' SET ' . DB_USER_ACTION_CACHE . '=:cache WHERE ' . DB_ITEM_ID . '=:id',
         array('id' => $id, 'cache' => $cache));
 }
 
 function setActionAndCache($id, int $action, $cache) {
     return Database::getInstance()->update('UPDATE ' . DB_TABLE_USERS . ' SET ' . DB_USER_ACTION . '=:action,'
-            . DB_USER_ACTION_CACHE . '=:cache WHERE ' . DB_USER_ID . '=:id',
+            . DB_USER_ACTION_CACHE . '=:cache WHERE ' . DB_ITEM_ID . '=:id',
         array('id' => $id, 'action' => $action, 'cache' => $cache));
 }
 
@@ -154,7 +154,7 @@ function getMessage($message_id) {
 
 function updateUserField($id, string $value, $field=DB_ITEM_NAME) {
     $value_tag = $value ? ":value" : "NULL";
-    return Database::getInstance()->update('UPDATE ' . DB_TABLE_USERS . " SET $field=$value_tag WHERE " . DB_USER_ID . '=:id',
+    return Database::getInstance()->update('UPDATE ' . DB_TABLE_USERS . " SET $field=$value_tag WHERE " . DB_ITEM_ID . '=:id',
         array('id' => $id, 'value' => $value));
 }
 
@@ -162,8 +162,8 @@ function findByUsername(string &$username): ?string {
     if($username && strlen($username)) {
         if($username[0] != '@') $username = "@$username";
         $user = Database::getInstance()->query(
-                'SELECT ' . DB_USER_ID . ' FROM '. DB_TABLE_USERS .' WHERE ' . DB_USER_USERNAME . '=:username LIMIT 1',
-            array('username' => $username), DB_USER_ID);
+                'SELECT ' . DB_ITEM_ID . ' FROM '. DB_TABLE_USERS .' WHERE ' . DB_USER_USERNAME . '=:username LIMIT 1',
+            array('username' => $username), DB_ITEM_ID);
         return count($user) ? $user[0] : null;
     }
     return null;

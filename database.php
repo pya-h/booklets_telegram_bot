@@ -19,7 +19,6 @@ defined('DB_ITEM_TEACHER_ID') or define('DB_ITEM_TEACHER_ID','teacher_id');
 defined('DB_ITEM_COURSE_ID') or define('DB_ITEM_COURSE_ID','course_id');
 
 // database table user fields:
-defined('DB_USER_ID') or define('DB_USER_ID','id');
 defined('DB_USER_USERNAME') or define('DB_USER_USERNAME','username');
 defined('DB_USER_ACTION') or define('DB_USER_ACTION','action');
 defined('DB_USER_MODE') or define('DB_USER_MODE','mode');
