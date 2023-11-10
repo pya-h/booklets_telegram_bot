@@ -27,7 +27,7 @@ Running at: https://t.me/Persian_projectbot
 5. Send posts to every bot user; It can be used to:
     * 1- Notify users about an issue or update
     * 2- advertisement.
-    * Note: while sending post to all users, The bot will simultaneously show a progress state.
+    * Note: while sending post to all users, The bot will simultaneously show progress state.
 6. Write biography for teachers.
 7. Upgrade a user to Teacher mode. This is used to link Teacher names in the database to an actual Telegram user.
     * After this is done for a user, All users can contact that user as a teacher and his/her Teaching Assistants(TAs).
