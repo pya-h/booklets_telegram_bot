@@ -1,6 +1,7 @@
 # Booklets Telegram Bot
 
 # Language: PHP
+# Database: MySQL
 
 Telegram bot designed for downloading and uploading booklets categorized by teacher and course name.
 
