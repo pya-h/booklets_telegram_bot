@@ -36,7 +36,7 @@ Running at: https://t.me/Persian_projectbot
     meaning that he/she will see the sum of download counts on this teacher/course booklets.
     * When admin specifies both teacher and course names in the menu, he/she will see the download count of the course that is presented by the selected teacher.
     * This precedure continues hierarchically.
-9. Answer user messages sent with Support option. If the message is answered in the past, the bot will notify the admin trying to answer again.
+9. Answer user messages sent with Support option. If the message is answered in the past, then bot will notify the admin trying to answer again.
 
 # God Users:
 1. All above features (except for support section, obviously!)
