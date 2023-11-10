@@ -24,7 +24,9 @@ Running at: https://t.me/Persian_projectbot
 2. Edit booklet captions or change their file.
 3. Obtain the statistic of the bot, including number of users, courses, teachers, booklets, etc.
 4. Send Posts to main channel including glass buttons.
-5. Send posts to every bot user; It can be used to: 1- Notify users about an issue or update, 2. advertisement.
+5. Send posts to every bot user; It can be used to:
+    * 1- Notify users about an issue or update
+    * 2. advertisement.
     * Note: while sending post to all users, The bot will simultaneously show a progress state.
 6. Write biography for teachers.
 7. Upgrade a user to Teacher mode. This is used to link Teacher names in the database to an actual Telegram user.
