@@ -20,7 +20,7 @@ Running at: https://t.me/Persian_projectbot
 2. Obtain a full statistics for The course & booklets presented by this teacher. So the teacher can see the download counts on his/her each presented course, and the total downloads of them.
 
 # Special Options: Admin & Superusers(=GOD)
-1. Upload Booklets
+1. Upload Booklets and Add Course/Teacher names.
 2. Edit booklet captions or change their file.
 3. Obtain the statistic of the bot, including number of users, courses, teachers, booklets, etc.
 4. Send Posts to main channel including glass buttons.
@@ -41,6 +41,20 @@ Running at: https://t.me/Persian_projectbot
 # God Users:
 1. All above features (except for support section, obviously!)
 2. Add/Remove Other admins
+
+# Special mode users Authorizations:
+* God users can log in through /godAccess command and entering the username and password of the god.
+    * Maximum number of gods allowed is 3 (can be changed in database.php, by changing MAX_GODS constant); when number of gods logged in becomes 3, /godAccess command will be disabled.
+* Admin: Gods can promote a user to Admin User.
+    * God will select 'Add admin' option, then he/she can promote a bot user to admin, by forwarding a message from him'her, or by entering username(must start with @)
+    * After that bot will ask for a name; this name will be the name of that specific user (not the telegram name, because some users enter nonsense as the name)
+* Teacher: Gods and admins can promote a user to teacher mode.
+    * After selecting 'Link Teacher Account' Option, bot will ask which teacher(From the teachers list) is going to be linked to a telegram user. Then admion can forward a message,
+        or enter teacher's telegram username starting with @.
+* TA: TA user can only be added/removed by the teacher. Each teacher can add/remove his/her own TAs.
+
+# Note:
+* Each user can have just one mode: God, Admin, Teacher, TA or normal user. Trying to set two modes for one user, will simply override his/her current mode.
 
 # .env file pattern:
     DB_USER = "DatabaseUsername"
