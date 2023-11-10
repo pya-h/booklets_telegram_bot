@@ -40,9 +40,9 @@ Running at: https://t.me/Persian_projectbot
 2. Add/Remove Other admins
 
 # .env file pattern:
-DB_USER = "DatabaseUsername"
-DB_PASSWORD = "DatabaseUsernamesPassword"
-DB_NAME = "DatabaseName"
-TOKEN = "TelegramBotToken"
-GOD_NAME = "superuser name"
-GOD_SECRET = "superuser pass"
+    DB_USER = "DatabaseUsername"
+    DB_PASSWORD = "DatabaseUsernamesPassword"
+    DB_NAME = "DatabaseName"
+    TOKEN = "TelegramBotToken"
+    GOD_NAME = "superuser name"
+    GOD_SECRET = "superuser pass"
