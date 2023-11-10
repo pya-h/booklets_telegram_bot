@@ -22,8 +22,8 @@ Running at: https://t.me/Persian_projectbot
 # Special Options: Admin & Superusers(=GOD)
 1. Upload Booklets
 2. Edit booklet captions or change their file.
-3. Obtain the statistic of the bot, containg number of users, courses, teachers, booklets, etc.
-4. Send Posts to main channel containing glass buttons.
+3. Obtain the statistic of the bot, including number of users, courses, teachers, booklets, etc.
+4. Send Posts to main channel including glass buttons.
 5. Send posts to every bot user; It can be used to: 1- Notify users about an issue or update, 2. advertisement.
     * Note: while sending post to all users, The bot will simultaneously show a progress state.
 6. Write biography for teachers.
