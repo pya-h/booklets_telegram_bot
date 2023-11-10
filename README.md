@@ -32,7 +32,7 @@ Running at: https://t.me/Persian_projectbot
 7. Upgrade a user to Teacher mode. This is used to link Teacher names in the database to an actual Telegram user.
     * After this is done for a user, All users can contact that user as a teacher and his/her Teaching Assistants(TAs).
 8. See the number of downloads for every teacher, course or booklets, while using Download booklet option.
-    * When an admin clicks on Download Booklet, and then Download by teacherName/courseName, in next menu he/she will see the number of all downloads related to this teacher
+    * When an admin clicks on Download Booklet, and then Download by teacherName/courseName, in next menu he/she will see the number of all downloads related to this teacher/course
     meaning that he/she will see the sum of download counts on this teacher/course booklets.
     * When admin specifies both teacher and course names in the menu, he/she will see the download count of the course that is presented by the selected teacher.
     * This precedure continues hierarchically.
