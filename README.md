@@ -16,7 +16,7 @@ Running at: https://t.me/Persian_projectbot
 
 # Special Options: Teachers & TAs
 1. Define/Remove his/her Teaching assistants(TAs).
-    * TAs doesnt have any special option compared to normal users. TAs just can answer the messages sent for their teacher.
+    * TAs don't have any special option compared to normal users. TAs just can answer the messages sent for their teacher.
 2. Obtain a full statistics for The course & booklets presented by this teacher. So the teacher can see the download counts on his/her each presented course, and the total downloads of them.
 
 # Special Options: Admin & Superusers(=GOD)
