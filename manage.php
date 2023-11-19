@@ -84,7 +84,7 @@ function &startUpgradingUser($user_id, array &$message, int $mode, string $posit
 }
 
 function appendStatsToMessage($msg, int $stats): string {
-    return "$msg\nا - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - ا\nتعداد دانلودهای این مورد: $stats";
+    return "$msg\n〰️〰️〰️〰️〰️〰️〰️〰️〰️〰️〰️〰️〰️〰️〰️〰️〰️〰️〰️〰️〰️〰️\nتعداد دانلودهای این مورد: $stats";
 }
 
 function handleCasualMessage(&$update) {
@@ -95,7 +95,8 @@ function handleCasualMessage(&$update) {
     $message = $update['message'];
     $message_id = $update['message'][MESSAGE_ID_TAG];
     $data = $message[TEXT_TAG] ?? null;
-    $response = null;
+    $response = $keyboard = null;
+
     if($data) {
         // most common options
         switch($data) {
@@ -152,8 +153,8 @@ function handleCasualMessage(&$update) {
                                 INLINE_KEYBOARD => array(
                                     array(
                                         array(TEXT_TAG => 'مشاهده',
-                                            CALLBACK_DATA => DB_TABLE_MESSAGES . RELATED_DATA_SEPARATOR . 'sh' 
-                                                . RELATED_DATA_SEPARATOR . $message_id . RELATED_DATA_SEPARATOR . $chat_id 
+                                            CALLBACK_DATA => DB_TABLE_MESSAGES . RELATED_DATA_SEPARATOR . 'sh'
+                                                . RELATED_DATA_SEPARATOR . $message_id . RELATED_DATA_SEPARATOR . $chat_id
                                                 . RELATED_DATA_SEPARATOR . $msg[DB_ITEM_ID]
                                         )
                                     )
@@ -165,13 +166,21 @@ function handleCasualMessage(&$update) {
                     } else $response = 'چنین پیامی در دیتابیس وجود ندارد و امکان پاسخ دهی به آن نیست!';
 
                     resetAction($user_id);
+                } else if(strpos($data, CMD_GET_BOOKLET_PREFIX) !== false) {
+                    $params = explode(CMD_COMMAND_PARAM_SEPARATOR, $data);
+                    if (count($params) === 3) {
+                        if(updateAction($user_id, ACTION_DOWNLOAD_BOOKLET, true)) {
+                            $response = 'طبقه بندی جزوه ها بر اساس:';
+                            $categories = array(DB_ITEM_TEACHER_ID => $params[1], DB_ITEM_COURSE_ID => $params[2]);
+                            $keyboard = createClassifyByMenu($user_id, $categories);
+                        } else $response = 'مشکلی حین اجرای دستور موردنظر پیش آمد! لطفا لحظاتی دیگر دوباره تلاش کتید.';
+                    } else $response = 'دستور مورد نظر شناسایی نشد!';
                 } else $response = handleGospel($user, $data);
                 break;
         }
 
     }
 
-    $keyboard = null;
     if(!$response) {
         switch($data) {
             case CMD_DOWNLOAD_BOOKLET:
@@ -246,10 +255,17 @@ function handleCasualMessage(&$update) {
                 }
                 break;
             case CMD_FAVORITES:
-                $response = createLinkedList(getFavoritesList($user_id));
-                if(!updateActionCache($user_id, 0))
-                    $response = 'مشکلی حین دریافت لیست علاقه مندی های شما پیش آمد. لطفا دوباره تلاش کنید...';
-
+                $favs = getFavoritesList($user_id);
+                $response = createLinkedList($favs);
+                if(count($favs) > MAX_LINKED_LIST_LENGTH) {
+                    $keyboard = array(
+                        INLINE_KEYBOARD => array(
+                            array(
+                                array(TEXT_TAG => "بعدی", CALLBACK_DATA => DB_TABLE_FAVORITES . RELATED_DATA_SEPARATOR . '1')
+                            )
+                        )
+                    );
+                }
                 break;
             default:
                 $response = null;
@@ -613,13 +629,13 @@ function handleCallbackQuery(&$update) {
             KEYBOARD,  getMainMenu($user[DB_USER_MODE])
         );
     } else if(strpos($data, DB_TABLE_MESSAGES) !== false) {
-        // check if its not a user message:
+        // check if it's not a user message:
         $params = explode(RELATED_DATA_SEPARATOR, $data);
         $command = $params[1] ?? null;
         switch($command) {
             case 'sh':
                 // user wants to see admin message
-                // data is as: messeges/show/message_id/admin_id/reply_to_mesg_id
+                // data is as: messages/show/message_id/admin_id/reply_to_mesg_id
                 if(count($params) === 5) {
                     callMethod(
                         METH_COPY_MESSAGE,
@@ -638,7 +654,7 @@ function handleCallbackQuery(&$update) {
             case 'rp':
                 if(count($params) >= 3) {
                     // admin is attempting to answer a message
-                    // data is as: messeges/reply/message_id
+                    // data is as: messages/reply/message_id
                     if(setActionAndCache($user_id, ACTION_WRITE_REPLY_TO_USER, $params[2])) {
                         $answer = 'پاسخ خودتو بنویس: (لغو /cancel)';
                         if (isMessageAnswered($params[2]))
@@ -668,7 +684,17 @@ function handleCallbackQuery(&$update) {
             default:
                 $answer = "دستور موردنظر شناسایی نشد!";
                 break;
-        } 
+        }
+    } else if(strpos($data, DB_TABLE_FAVORITES) !== false) {
+        $favs = getFavoritesList($user_id);
+        $current = (int)explode(RELATED_DATA_SEPARATOR, $data)[1];
+        $keyboard_options = array();
+        if($current > 0)
+            $keyboard_options[] = array(TEXT_TAG => 'قبلی', CALLBACK_DATA => DB_TABLE_FAVORITES . RELATED_DATA_SEPARATOR . ($current - 1));
+        if(($current+1) * MAX_LINKED_LIST_LENGTH < count($favs))
+            $keyboard_options[] = array(TEXT_TAG => 'بعدی', CALLBACK_DATA => DB_TABLE_FAVORITES . RELATED_DATA_SEPARATOR . ($current + 1));
+        $keyboard = array(INLINE_KEYBOARD => array($keyboard_options));
+        $answer = createLinkedList($favs, $current);
     } else if($user[DB_USER_ACTION] == ACTION_SELECT_BOOKLET_TO_GET) {
         if(!strpos($data, DATA_JOIN_SIGN)) {
             // $callback_data here is actually the sql conditions
@@ -689,7 +715,9 @@ function handleCallbackQuery(&$update) {
                     );
                 }
             }
-            $answer = appendStatsToMessage('جزوه (ها)ی انتخابی درس ' . $course . ' - استاد ' . $teacher . "\n", $downloads);
+            $answer = 'جزوه (ها)ی انتخابی درس ' . $course . ' - استاد ' . $teacher . "\n";
+            if($user[DB_USER_MODE] == GOD_USER || $user[DB_USER_MODE] == ADMIN_USER)
+                $answer = appendStatsToMessage($answer, $downloads);
             resetAction($user_id);
         } /*else {
             // have in mind resetting in action
@@ -779,33 +807,8 @@ function handleCallbackQuery(&$update) {
                         }
                     }
                 } else {
-                    $is_in_favs = isInFavoritesList($user_id, $categories);
-                    $data = makeCategoryString($categories[DB_ITEM_COURSE_ID], $categories[DB_ITEM_TEACHER_ID]);
-                    switch($categories['options']) {
-                        case '+f':
-                            if(!$is_in_favs)
-                                updateFavoritesList($user_id, $categories);
-                            $is_in_favs = true;
-                            break;
-                        case '-f':
-                            if($is_in_favs)
-                                updateFavoritesList($user_id, $categories, true);
-                            $is_in_favs = false;
-                            break;
-                    }
                     $answer = 'طبقه بندی جزوه ها بر اساس:';
-                    $keyboard = array(
-                        INLINE_KEYBOARD => array(
-                            array(
-                                array(TEXT_TAG => 'شماره جزوه', CALLBACK_DATA => $data . DATA_JOIN_SIGN . '0'),
-                                array(TEXT_TAG => 'عنوان جزوه', CALLBACK_DATA => $data . DATA_JOIN_SIGN . '1'),
-                            ),
-                            array(
-                                !$is_in_favs ? array(TEXT_TAG => 'افزودن به علاقه مندی ها',  CALLBACK_DATA => $data . DATA_JOIN_SIGN . '+f')
-                                            :  array(TEXT_TAG => 'حذف از علاقه مندی ها',  CALLBACK_DATA => $data . DATA_JOIN_SIGN . '-f')
-                            )
-                        )
-                    );
+                    $keyboard = createClassifyByMenu($user_id, $categories);
                 }
                 break;
         }
@@ -843,7 +846,7 @@ function handleCallbackQuery(&$update) {
                         $keyboard = createMenu(DB_TABLE_TEACHERS, $data, DB_ITEM_COURSE_ID . "=$params[1]",
                             DB_ITEM_TEACHER_ID, $user[DB_USER_ACTION_CACHE] ? ORDER_BY_MOST_DOWNLOADED_BOTH : ORDER_NONE);
                         if(($user[DB_USER_MODE] == ADMIN_USER || $user[DB_USER_MODE] == GOD_USER) && $keyboard) 
-                            $answer = appendStatsToMessage($answer, getDownloadSatistics(null, $params[1]));
+                            $answer = appendStatsToMessage($answer, getDownloadStatistics(null, $params[1]));
                     } else
                         $keyboard = createMenu(DB_TABLE_TEACHERS, $data);
 
@@ -876,7 +879,7 @@ function handleCallbackQuery(&$update) {
                                     DB_ITEM_COURSE_ID, $user[DB_USER_ACTION_CACHE] ? ORDER_BY_MOST_DOWNLOADED_BOTH : ORDER_NONE
                                 );
                                 if(($user[DB_USER_MODE] == ADMIN_USER || $user[DB_USER_MODE] == GOD_USER) && $keyboard)
-                                    $answer = appendStatsToMessage($answer, getDownloadSatistics($params[1]));
+                                    $answer = appendStatsToMessage($answer, getDownloadStatistics($params[1]));
                             } else
                                 $keyboard = createMenu(DB_TABLE_COURSES, $data);
 

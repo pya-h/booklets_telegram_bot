@@ -5,7 +5,7 @@ require_once './telegram_api.php';
 
 // UI constants
 defined('MAX_COLUMN_LENGTH') or define('MAX_COLUMN_LENGTH', 30);
-
+defined('MAX_LINKED_LIST_LENGTH') or define('MAX_LINKED_LIST_LENGTH', 10);
 defined('CMD_GOD_ACCESS') or define('CMD_GOD_ACCESS', '/godAccess');
 
 // USER MODE SPECIFIC MENUS
@@ -41,7 +41,9 @@ defined('CMD_GOD_ACCESS') or define('CMD_GOD_ACCESS', '/godAccess');
     defined('CMD_MESSAGE_TO_TEACHER') or define('CMD_MESSAGE_TO_TEACHER', 'ارتباط با استاد 💭👨‍🏫');
     defined('CMD_TEACHER_BIOS') or define('CMD_TEACHER_BIOS', 'معارفه 💭👨‍🏫');
     defined('CMD_MAIN_MENU') or define('CMD_MAIN_MENU', 'بازگشت به منو ↪️');
-    defined('CMD_FAVORITES') or define('CMD_FAVORITES', 'علاقه مندی ها');
+    defined('CMD_FAVORITES') or define('CMD_FAVORITES', 'علاقه مندی ها ❤️');
+    defined('CMD_GET_BOOKLET_PREFIX') or define('CMD_GET_BOOKLET_PREFIX', '/bk');
+    defined('CMD_COMMAND_PARAM_SEPARATOR') or define('CMD_COMMAND_PARAM_SEPARATOR', '_');
 
     # ORDERS
         defined('ORDER_NONE') or define('ORDER_NONE', 0);
@@ -79,7 +81,6 @@ function alignButtons(array &$items, string $related_column, string $data_prefix
 
 function createMenu(string $table_name, ?string $previous_data = null, ?string $filter_query = null, ?string $filter_index = null, int $order_by=ORDER_NONE): ?array
 {
-
     $query = 'SELECT ' . DB_ITEM_ID . ', ' . DB_ITEM_NAME . ' FROM ' . $table_name;
     if(!$previous_data && $filter_query && !$filter_index) // this condition just happens for remove admin menu
         $query .= ' WHERE ' . $filter_query;
@@ -99,7 +100,7 @@ function createMenu(string $table_name, ?string $previous_data = null, ?string $
             $params = explode(RELATED_DATA_SEPARATOR, $previous_data);
             if(count($params) != 2)// sth is wrong
                 return null;
-            // this part is a little twisted, figure it out urself, i dont feel explaning right now
+            // this part is a little twisted, figure it out yourself, I don't feel explaining right now
             
             $query = "SELECT $table_name." . DB_ITEM_ID . ", $table_name." . DB_ITEM_NAME . ", $params[0]." . DB_ITEM_ID
                 . ' as xid FROM ' . DB_TABLE_TEACHERS . ', ' . DB_TABLE_COURSES . " WHERE $params[0]." . DB_ITEM_ID . "=$params[1]";
@@ -108,7 +109,7 @@ function createMenu(string $table_name, ?string $previous_data = null, ?string $
         }
 
         $query .= ' ORDER BY (SELECT SUM(' . DB_TABLE_BOOKLETS . '.' . DB_BOOKLETS_DOWNLOADS . ') FROM ' . DB_TABLE_BOOKLETS . " WHERE $qc) DESC";
-        // /*commment this*/    logText($query);
+        // /*comment this*/    logText($query);
 
     }
     
@@ -162,13 +163,12 @@ function getMainMenu(int $user_mode): array
                             [CMD_DOWNLOAD_BOOKLET, CMD_STATISTICS, CMD_UPLOAD_BOOKLET], // casual keyboard
                             [CMD_ADD_COURSE, CMD_EDIT_BOOKLET, CMD_ADD_TEACHER],
                             [CMD_MESSAGE_TO_TEACHER, CMD_TEACHER_BIOS],
-                            [CMD_LINK_TEACHER, CMD_SEND_POST_TO_CHANNEL, CMD_NOTIFICATION]
-                            // [CMD_FAVORITES]
+                            [CMD_LINK_TEACHER, CMD_SEND_POST_TO_CHANNEL, CMD_NOTIFICATION],
+                            [CMD_FAVORITES]
                         ]
                     : [ // teacher, ta, normal user
                         [CMD_MESSAGE_TO_ADMIN, CMD_TEACHER_BIOS, CMD_DOWNLOAD_BOOKLET],
-                        // [CMD_MESSAGE_TO_TEACHER, CMD_FAVORITES]
-                        [CMD_MESSAGE_TO_TEACHER]
+                        [CMD_MESSAGE_TO_TEACHER, CMD_FAVORITES]
                     ]
     );
 
@@ -205,9 +205,44 @@ function getDownloadOptions(): array {
 
 function createLinkedList(array $booklets = array(), $page=0): string {
     $list = '';
-    foreach ($booklets as $index => &$booklet) {
-        $list .= "$index. " . $booklet['teacher'] . ' - ' . $booklet['course'] . "\t/bk_" . $booklet[DB_ITEM_TEACHER_ID] . '_' . $booklet[DB_ITEM_COURSE_ID] . "\n";
-
+    $end = ($page + 1) * MAX_LINKED_LIST_LENGTH;
+    if(!isset($booklets[$end-1]))
+        $end = count($booklets);
+    for($i=$page*MAX_LINKED_LIST_LENGTH; $i < $end; $i++) {
+        $list .= ($i + 1) . '. ' . $booklets[$i]['teacher'] . ' - ' . $booklets[$i]['course'] . "\t"
+            . CMD_GET_BOOKLET_PREFIX . CMD_COMMAND_PARAM_SEPARATOR . $booklets[$i][DB_ITEM_TEACHER_ID]
+            . CMD_COMMAND_PARAM_SEPARATOR . $booklets[$i][DB_ITEM_COURSE_ID];
+        if($i < $end - 1)
+            $list .= "\n〰️〰️〰️〰️〰️〰️〰️〰️〰️〰️〰️〰️〰️〰️〰️〰️〰️〰️〰️〰️〰️〰️\n";
     }
-    return $list;
+    return !empty($list) ? $list : 'شما هنوز چیزی به علاقه مندی های خود اضافه نکرده اید!';
+}
+
+function createClassifyByMenu($user_id, &$categories): array {
+    $is_in_favs = isInFavoritesList($user_id, $categories);
+    $data = makeCategoryString($categories[DB_ITEM_COURSE_ID], $categories[DB_ITEM_TEACHER_ID]);
+    switch($categories['options']) {
+        case '+f':
+            if(!$is_in_favs)
+                updateFavoritesList($user_id, $categories);
+            $is_in_favs = true;
+            break;
+        case '-f':
+            if($is_in_favs)
+                updateFavoritesList($user_id, $categories, true);
+            $is_in_favs = false;
+            break;
+    }
+    return array(
+        INLINE_KEYBOARD => array(
+            array(
+                array(TEXT_TAG => 'شماره جزوه', CALLBACK_DATA => $data . DATA_JOIN_SIGN . '0'),
+                array(TEXT_TAG => 'عنوان جزوه', CALLBACK_DATA => $data . DATA_JOIN_SIGN . '1'),
+            ),
+            array(
+                !$is_in_favs ? array(TEXT_TAG => 'افزودن به علاقه مندی ها ❤️',  CALLBACK_DATA => $data . DATA_JOIN_SIGN . '+f')
+                    :  array(TEXT_TAG => 'حذف از علاقه مندی ها ❌',  CALLBACK_DATA => $data . DATA_JOIN_SIGN . '-f')
+            )
+        )
+    );
 }

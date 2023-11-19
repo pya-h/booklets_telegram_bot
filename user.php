@@ -198,9 +198,10 @@ function getFavoritesList($user_id): ?array
     /* SELECT favorites.*, teachers.name as teacher, courses.name as course FROM `favorites`
         JOIN courses ON favorites.course_id=courses.id
         JOIN teachers ON favorites.teacher_id=teachers.id WHERE 1 */
-    return Database::getInstance()->query('SELECT ' . DB_TABLE_FAVORTIES . '.*, ' . DB_TABLE_TEACHERS . '.' . DB_ITEM_NAME
-        . ' as teacher, ' . DB_TABLE_COURSES . '.' . DB_ITEM_NAME . ' as course FROM ' . DB_TABLE_FAVORTIES
-        . 'JOIN ' . DB_TABLE_COURSES . ' ON ' . DB_TABLE_FAVORTIES . '.' . DB_ITEM_COURSE_ID . '=' . DB_TABLE_COURSES 
-        . '.' . DB_ITEM_ID . ' JOIN ' . DB_TABLE_TEACHERS . ' ON ' . DB_TABLE_FAVORTIES . '.' . DB_ITEM_TEACHER_ID 
+
+    return Database::getInstance()->query('SELECT ' . DB_TABLE_FAVORITES . '.*, ' . DB_TABLE_TEACHERS . '.' . DB_ITEM_NAME
+        . ' as teacher, ' . DB_TABLE_COURSES . '.' . DB_ITEM_NAME . ' as course FROM ' . DB_TABLE_FAVORITES
+        . ' JOIN ' . DB_TABLE_COURSES . ' ON ' . DB_TABLE_FAVORITES . '.' . DB_ITEM_COURSE_ID . '=' . DB_TABLE_COURSES
+        . '.' . DB_ITEM_ID . ' JOIN ' . DB_TABLE_TEACHERS . ' ON ' . DB_TABLE_FAVORITES . '.' . DB_ITEM_TEACHER_ID
         . '=' . DB_TABLE_TEACHERS . '.' . DB_ITEM_ID . ' WHERE ' . DB_ITEM_USER_ID . '=:user_id', array('user_id' => $user_id));
 }

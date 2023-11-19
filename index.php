@@ -5,8 +5,8 @@ require_once './manage.php';
 
 $update = getUpdate();
 // check user is a member in specified channels
-// channels list: Edit the list for your desired channels
 if ($update != null) {
+    // Edit this list for your desired channels
     $channels = array(FIRST_2_JOIN_CHANNEL_ID => array('name' => "Persian College", INLINE_URL_TAG => FIRST_2_JOIN_CHANNEL_URL),
         SECOND_2_JOIN_CHANNEL_ID => array('name' => "Persian Project", INLINE_URL_TAG => SECOND_2_JOIN_CHANNEL_URL));
 

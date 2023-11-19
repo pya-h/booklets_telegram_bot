@@ -104,7 +104,7 @@ function getTeachersField($teacher_id, string $field=DB_ITEM_NAME) {
     return $values[0] ?? null;
 }
 
-function getBooklets(string $filter='1=1', bool $increaseDownloads=false) {
+function getBooklets(string $filter='1=1', bool $increaseDownloads=false): ?array {
     $db = Database::getInstance();
     if($increaseDownloads)
         $db->update('UPDATE ' . DB_TABLE_BOOKLETS . ' SET ' . DB_BOOKLETS_DOWNLOADS . '=' . DB_BOOKLETS_DOWNLOADS . " + 1 WHERE $filter");
@@ -121,7 +121,7 @@ function introduceTeacher($teacher_id, ?string $bio=null) {
         array('teacher_id' => $teacher_id, 'bio' => $bio));
 }
 
-function getDownloadSatistics($teacher_id=null, $course_id=null, $booklet_id=null): int {
+function getDownloadStatistics($teacher_id=null, $course_id=null, $booklet_id=null): int {
     $conditions = [];
     if($booklet_id) {
         $conditions[] = DB_ITEM_ID . "=$booklet_id";
