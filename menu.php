@@ -30,23 +30,24 @@ defined('CMD_GOD_ACCESS') or define('CMD_GOD_ACCESS', '/godAccess');
     defined('CMD_INTRODUCE_TA') or define('CMD_INTRODUCE_TA', 'معرفی TA 👩‍🎓');
     defined('CMD_REMOVE_TA') or define('CMD_REMOVE_TA', 'حذف TA ❌');
 
-// SHARED MENU
-defined('CMD_DOWNLOAD_BY_COURSE') or define('CMD_DOWNLOAD_BY_COURSE', 'جست و جو بر اساس نام درس 📖');
-defined('CMD_DOWNLOAD_BY_TEACHER') or define('CMD_DOWNLOAD_BY_TEACHER', 'جست و جو بر اساس نام استاد 👨‍🏫');
-defined('CMD_DOWNLOAD_BY_MOST_DOWNLOADED_TEACHER') or define('CMD_DOWNLOAD_BY_MOST_DOWNLOADED_TEACHER', 'به ترتیب پردانلودترین استاد 👨‍🏫');
-defined('CMD_DOWNLOAD_BY_MOST_DOWNLOADED_COURSE') or define('CMD_DOWNLOAD_BY_MOST_DOWNLOADED_COURSE', 'به ترتیب پردانلودترین درس 📖');
+// COMMON MENU
+    defined('CMD_DOWNLOAD_BY_COURSE') or define('CMD_DOWNLOAD_BY_COURSE', 'جست و جو بر اساس نام درس 📖');
+    defined('CMD_DOWNLOAD_BY_TEACHER') or define('CMD_DOWNLOAD_BY_TEACHER', 'جست و جو بر اساس نام استاد 👨‍🏫');
+    defined('CMD_DOWNLOAD_BY_MOST_DOWNLOADED_TEACHER') or define('CMD_DOWNLOAD_BY_MOST_DOWNLOADED_TEACHER', 'به ترتیب پردانلودترین استاد 👨‍🏫');
+    defined('CMD_DOWNLOAD_BY_MOST_DOWNLOADED_COURSE') or define('CMD_DOWNLOAD_BY_MOST_DOWNLOADED_COURSE', 'به ترتیب پردانلودترین درس 📖');
 
+    defined('CMD_DOWNLOAD_BOOKLET') or define('CMD_DOWNLOAD_BOOKLET', 'جزوه ها 📖');
+    defined('CMD_MESSAGE_TO_ADMIN') or define('CMD_MESSAGE_TO_ADMIN', 'پشتیبانی 💬');
+    defined('CMD_MESSAGE_TO_TEACHER') or define('CMD_MESSAGE_TO_TEACHER', 'ارتباط با استاد 💭👨‍🏫');
+    defined('CMD_TEACHER_BIOS') or define('CMD_TEACHER_BIOS', 'معارفه 💭👨‍🏫');
+    defined('CMD_MAIN_MENU') or define('CMD_MAIN_MENU', 'بازگشت به منو ↪️');
+    defined('CMD_FAVORITES') or define('CMD_FAVORITES', 'علاقه مندی ها');
 
-defined('CMD_DOWNLOAD_BOOKLET') or define('CMD_DOWNLOAD_BOOKLET', 'جزوه ها 📖');
-defined('CMD_MESSAGE_TO_ADMIN') or define('CMD_MESSAGE_TO_ADMIN', 'پشتیبانی 💬');
-defined('CMD_MESSAGE_TO_TEACHER') or define('CMD_MESSAGE_TO_TEACHER', 'ارتباط با استاد 💭👨‍🏫');
-defined('CMD_TEACHER_BIOS') or define('CMD_TEACHER_BIOS', 'معارفه 💭👨‍🏫');
-defined('CMD_MAIN_MENU') or define('CMD_MAIN_MENU', 'بازگشت به منو ↪️');
-
-defined('ORDER_NONE') or define('ORDER_NONE', 0);
-defined('ORDER_BY_MOST_DOWNLOADED_TEACHER') or define('ORDER_BY_MOST_DOWNLOADED_TEACHER', 1);
-defined('ORDER_BY_MOST_DOWNLOADED_COURSE') or define('ORDER_BY_MOST_DOWNLOADED_COURSE', 2);
-defined('ORDER_BY_MOST_DOWNLOADED_BOTH') or define('ORDER_BY_MOST_DOWNLOADED_BOTH', 3);
+    # ORDERS
+        defined('ORDER_NONE') or define('ORDER_NONE', 0);
+        defined('ORDER_BY_MOST_DOWNLOADED_TEACHER') or define('ORDER_BY_MOST_DOWNLOADED_TEACHER', 1);
+        defined('ORDER_BY_MOST_DOWNLOADED_COURSE') or define('ORDER_BY_MOST_DOWNLOADED_COURSE', 2);
+        defined('ORDER_BY_MOST_DOWNLOADED_BOTH') or define('ORDER_BY_MOST_DOWNLOADED_BOTH', 3);
 
 
 function alignButtons(array &$items, string $related_column, string $data_prefix, string $callback_data_index=DB_ITEM_ID, string $other_related_column=null, $numbering=true): ?array
@@ -78,9 +79,7 @@ function alignButtons(array &$items, string $related_column, string $data_prefix
 
 function createMenu(string $table_name, ?string $previous_data = null, ?string $filter_query = null, ?string $filter_index = null, int $order_by=ORDER_NONE): ?array
 {
-    /* ORDER BY QUERY:
-    select * from teachers ORDER BY (SELECT SUM(booklets.downloads) from booklets where booklets.teacher_id=teachers.id)
-    */
+
     $query = 'SELECT ' . DB_ITEM_ID . ', ' . DB_ITEM_NAME . ' FROM ' . $table_name;
     if(!$previous_data && $filter_query && !$filter_index) // this condition just happens for remove admin menu
         $query .= ' WHERE ' . $filter_query;
@@ -133,7 +132,7 @@ function createMenu(string $table_name, ?string $previous_data = null, ?string $
     return $options ? array(INLINE_KEYBOARD => $options) : null;
 }
 
-function createUserList(string $filter_query, string $filter_index = DB_ITEM_ID): ?array
+function createUsersMenu(string $filter_query, string $filter_index = DB_ITEM_ID): ?array
 {
     $fields = implode(',', [DB_ITEM_ID, DB_ITEM_NAME, DB_USER_USERNAME]);
     $items = Database::getInstance()->query("SELECT $fields FROM " . DB_TABLE_USERS . " WHERE $filter_query ORDER BY " . DB_ITEM_NAME);
@@ -141,7 +140,7 @@ function createUserList(string $filter_query, string $filter_index = DB_ITEM_ID)
     return $options ? array(INLINE_KEYBOARD => $options) : null;
 }
 
-function createIndexMenu(array &$booklets, bool $by_caption = false, bool $all_items_option = true): array
+function createSessionsMenu(array &$booklets, bool $by_caption = false, bool $all_items_option = true): ?array
 {
     $options = alignButtons($booklets, !$by_caption ? DB_BOOKLETS_INDEX : DB_BOOKLETS_CAPTION,
         DB_TABLE_BOOKLETS . '.' . DB_ITEM_ID . '=', DB_ITEM_ID, null, $by_caption);
@@ -156,16 +155,19 @@ function createIndexMenu(array &$booklets, bool $by_caption = false, bool $all_i
 
 function getMainMenu(int $user_mode): array
 {
+    // TODO: changed this fucked up peace
     $keyboard = array('resize_keyboard' => true, 'one_time_keyboard' => true,
         'keyboard' => $user_mode == ADMIN_USER || $user_mode == GOD_USER ?
                         [ // admin or god
                             [CMD_DOWNLOAD_BOOKLET, CMD_STATISTICS, CMD_UPLOAD_BOOKLET], // casual keyboard
                             [CMD_ADD_COURSE, CMD_EDIT_BOOKLET, CMD_ADD_TEACHER],
                             [CMD_MESSAGE_TO_TEACHER, CMD_TEACHER_BIOS],
-                            [CMD_LINK_TEACHER, CMD_SEND_POST_TO_CHANNEL, CMD_NOTIFICATION],
+                            [CMD_LINK_TEACHER, CMD_SEND_POST_TO_CHANNEL, CMD_NOTIFICATION]
+                            // [CMD_FAVORITES]
                         ]
                     : [ // teacher, ta, normal user
                         [CMD_MESSAGE_TO_ADMIN, CMD_TEACHER_BIOS, CMD_DOWNLOAD_BOOKLET],
+                        // [CMD_MESSAGE_TO_TEACHER, CMD_FAVORITES]
                         [CMD_MESSAGE_TO_TEACHER]
                     ]
     );
@@ -199,4 +201,13 @@ function getDownloadOptions(): array {
             [CMD_MAIN_MENU]
         ]
     );
+}
+
+function createLinkedList(array $booklets = array(), $page=0): string {
+    $list = '';
+    foreach ($booklets as $index => &$booklet) {
+        $list .= "$index. " . $booklet['teacher'] . ' - ' . $booklet['course'] . "\t/bk_" . $booklet[DB_ITEM_TEACHER_ID] . '_' . $booklet[DB_ITEM_COURSE_ID] . "\n";
+
+    }
+    return $list;
 }

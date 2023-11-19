@@ -11,12 +11,14 @@ defined('DB_TABLE_COURSES') or define('DB_TABLE_COURSES','courses');
 defined('DB_TABLE_TEACHERS') or define('DB_TABLE_TEACHERS','teachers');
 defined('DB_TABLE_BOOKLETS') or define('DB_TABLE_BOOKLETS','booklets');
 defined('DB_TABLE_MESSAGES') or define('DB_TABLE_MESSAGES','messages');
+defined('DB_TABLE_FAVORITES') or define('DB_TABLE_FAVORITES','favorites');
 
 // database table:COMMON fields
 defined('DB_ITEM_ID') or define('DB_ITEM_ID','id');
 defined('DB_ITEM_NAME') or define('DB_ITEM_NAME','name'); // for both course and teacher tables
 defined('DB_ITEM_TEACHER_ID') or define('DB_ITEM_TEACHER_ID','teacher_id');
 defined('DB_ITEM_COURSE_ID') or define('DB_ITEM_COURSE_ID','course_id');
+defined('DB_ITEM_USER_ID') or define('DB_ITEM_USER_ID','user_id');
 
 // database table user fields:
 defined('DB_USER_USERNAME') or define('DB_USER_USERNAME','username');
@@ -149,7 +151,7 @@ function extractCategories(string &$data): array
   if(!$course || !$teacher || count($course) !== 2 || count($teacher) !== 2)
     return array('err' => 'یکی از فیلدهای درس یا استاد به درستی انتخاب نشدن!');
 
-  return array(DB_ITEM_TEACHER_ID => $teacher[1], DB_ITEM_COURSE_ID => $course[1], 'list_by' => $categories[2] ?? 0);
+  return array(DB_ITEM_TEACHER_ID => $teacher[1], DB_ITEM_COURSE_ID => $course[1], 'options' => $categories[2] ?? -1);
 }
 
 function getStatistics(): array
