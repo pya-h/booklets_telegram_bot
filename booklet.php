@@ -33,16 +33,15 @@ function makeCategoryString($course_id, $teacher_id): string{
         . DB_TABLE_TEACHERS . RELATED_DATA_SEPARATOR . $teacher_id;
 }
 
-function addBooklet(&$user, array &$file): array
-{
-    $categories = extractCategories($user[DB_USER_ACTION_CACHE]);
+function addBooklet(&$user, array &$file): array {
+    $categories = extractCategories($user[DB_USER_CACHE]);
 
     if(isset($categories['err']))
         return array('id' => null, 'err' => $categories['err']);
     $err = null; $item_id = null;
     if(isset($file[FILE_ID]) && isset($file['tag'])) {
         // now its ready for insertion
-        $fields = implode(',', array(DB_ITEM_TEACHER_ID, DB_ITEM_COURSE_ID, DB_BOOKLETS_FILE_ID, DB_BOOKLETS_CAPTION, DB_BOOKLETS_INDEX, DB_BOOKLETS_TYPE));
+        $fields = implode(',', array(DB_ITEM_TEACHER_ID, DB_ITEM_COURSE_ID, DB_ITEM_FILE_ID, DB_BOOKLETS_CAPTION, DB_BOOKLETS_INDEX, DB_ITEM_FILE_TYPE));
         // separate index and caption
         $identifiers = extractBookletIndexAndCaption($file[CAPTION_TAG]);
         $item_id = Database::getInstance()->insert(
@@ -65,14 +64,14 @@ function backupBooklet(&$user, ?string $new_caption = null): ?string
         $identifiers = extractBookletIndexAndCaption($new_caption);
         if (
             !$db->update('UPDATE ' . DB_TABLE_BOOKLETS . ' SET ' . DB_BOOKLETS_CAPTION . '=:caption, ' . DB_BOOKLETS_INDEX . '=:index WHERE ' . DB_ITEM_ID . '=:id',
-                array('id' => $user[DB_USER_ACTION_CACHE], 'caption' => $identifiers[1], 'index' => $identifiers[0]))
+                array('id' => $user[DB_USER_CACHE], 'caption' => $identifiers[1], 'index' => $identifiers[0]))
         )
             $err .= 'تغییر کپشن ناموفق بود!';
 
     }
     $booklet = $db->query(
         'SELECT * FROM '. DB_TABLE_BOOKLETS .' WHERE ' . DB_ITEM_ID  . '=:id LIMIT 1', array(
-            'id' => $user[DB_USER_ACTION_CACHE]
+            'id' => $user[DB_USER_CACHE]
         )
     );
     if(isset($booklet[0])) {
@@ -81,9 +80,9 @@ function backupBooklet(&$user, ?string $new_caption = null): ?string
                 makeCategoryString($booklet[0][DB_ITEM_COURSE_ID], $booklet[0][DB_ITEM_TEACHER_ID]));
         // send to channel
         callMethod(
-            'send' . ucfirst($booklet[0][DB_BOOKLETS_TYPE]),
+            'send' . ucfirst($booklet[0][DB_ITEM_FILE_TYPE]),
             CHAT_ID, BACKUP_CHANNEL_ID,
-            $booklet[0][DB_BOOKLETS_TYPE], $booklet[0][DB_BOOKLETS_FILE_ID],
+            $booklet[0][DB_ITEM_FILE_TYPE], $booklet[0][DB_ITEM_FILE_ID],
             CAPTION_TAG, $booklet[0][DB_BOOKLETS_INDEX] . ': '. $booklet[0][DB_BOOKLETS_CAPTION]
         );
     } else $err .= ' ارسال جزوه به کانال ناموفق بود!';
@@ -94,7 +93,7 @@ function backupBooklet(&$user, ?string $new_caption = null): ?string
 function changeBookletFile($booklet_id, array $file) {
     if(!isset($file[FILE_ID]) || !isset($file['tag']))
         return null;
-    return Database::getInstance()->update('UPDATE ' . DB_TABLE_BOOKLETS . ' SET ' . DB_BOOKLETS_FILE_ID . '=:file_id, ' . DB_BOOKLETS_TYPE . '=:type WHERE ' . DB_ITEM_ID . '=:id',
+    return Database::getInstance()->update('UPDATE ' . DB_TABLE_BOOKLETS . ' SET ' . DB_ITEM_FILE_ID . '=:file_id, ' . DB_ITEM_FILE_TYPE . '=:type WHERE ' . DB_ITEM_ID . '=:id',
             array('id' => $booklet_id, 'file_id' => $file[FILE_ID], 'type' => $file['tag']));
 }
 

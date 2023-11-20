@@ -24,9 +24,12 @@ defined('ACTION_EDIT_BOOKLET_FILE') or define('ACTION_EDIT_BOOKLET_FILE', 17);
 defined('ACTION_LINK_TEACHER') or define('ACTION_LINK_TEACHER', 18);
 defined('ACTION_SELECT_TEACHER_TO_CONTACT') or define('ACTION_SELECT_TEACHER_TO_CONTACT', 19);
 defined('ACTION_INTRODUCE_TA') or define('ACTION_INTRODUCE_TA', 20);
-defined('ACTION_SEND_NOTIFCATION') or define('ACTION_SEND_NOTIFCATION', 21);
+defined('ACTION_SEND_NOTIFICATION') or define('ACTION_SEND_NOTIFICATION', 21);
 defined('ACTION_INTRODUCE_TEACHER') or define('ACTION_INTRODUCE_TEACHER', 22);
 defined('ACTION_SEE_TEACHER_BIOS') or define('ACTION_SEE_TEACHER_BIOS', 23);
+defined('ACTION_UPLOAD_SAMPLE') or define('ACTION_UPLOAD_SAMPLE', 24);
+defined('ACTION_SENDING_SAMPLE_FILE') or define('ACTION_SENDING_SAMPLE_FILE', 25);
+defined('ACTION_SET_SAMPLE_TITLE') or define('ACTION_SET_SAMPLE_TITLE', 26);
 
 function getSuperiors(): ?array
 {
@@ -72,7 +75,7 @@ function getUser($id, string $username=null): array{
     $db->insert('INSERT INTO '. DB_TABLE_USERS . " ($fields) VALUES ($values)", $params);
     // TODO: error check?
     return array(DB_ITEM_ID => $id, DB_USER_MODE => NORMAL_USER, DB_USER_ACTION => ACTION_NONE,
-        DB_USER_ACTION_CACHE => null, DB_USER_USERNAME => $username);
+        DB_USER_CACHE => null, DB_USER_USERNAME => $username);
 }
 
 function getAllUsers(bool $get_all_columns=false): array {
@@ -83,7 +86,7 @@ function getAllUsers(bool $get_all_columns=false): array {
 function updateAction($id, int $action, bool $reset_cache = false) {
     $query = 'UPDATE ' . DB_TABLE_USERS . ' SET ' . DB_USER_ACTION . '=:action';
     if($reset_cache)
-        $query .= ', ' . DB_USER_ACTION_CACHE . '=NULL';
+        $query .= ', ' . DB_USER_CACHE . '=NULL';
     return Database::getInstance()->update("$query WHERE " . DB_ITEM_ID . '=:id',
         array('id' => $id, 'action' => $action));
 }
@@ -111,13 +114,13 @@ function downgradeUser($id) {
 }
 
 function updateActionCache($id, $cache) {
-    return Database::getInstance()->update('UPDATE ' . DB_TABLE_USERS . ' SET ' . DB_USER_ACTION_CACHE . '=:cache WHERE ' . DB_ITEM_ID . '=:id',
+    return Database::getInstance()->update('UPDATE ' . DB_TABLE_USERS . ' SET ' . DB_USER_CACHE . '=:cache WHERE ' . DB_ITEM_ID . '=:id',
         array('id' => $id, 'cache' => $cache));
 }
 
 function setActionAndCache($id, int $action, $cache) {
     return Database::getInstance()->update('UPDATE ' . DB_TABLE_USERS . ' SET ' . DB_USER_ACTION . '=:action,'
-            . DB_USER_ACTION_CACHE . '=:cache WHERE ' . DB_ITEM_ID . '=:id',
+            . DB_USER_CACHE . '=:cache WHERE ' . DB_ITEM_ID . '=:id',
         array('id' => $id, 'action' => $action, 'cache' => $cache));
 }
 

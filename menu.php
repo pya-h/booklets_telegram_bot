@@ -25,6 +25,7 @@ defined('CMD_GOD_ACCESS') or define('CMD_GOD_ACCESS', '/godAccess');
     defined('CMD_SEND_POST_TO_CHANNEL') or define('CMD_SEND_POST_TO_CHANNEL', 'پست 📯');
     defined('CMD_NOTIFICATION') or define('CMD_NOTIFICATION', 'خبررسانی 📯');
     defined('CMD_LINK_TEACHER') or define('CMD_LINK_TEACHER', 'ارتقا به استاد 🔗');
+    defined('CMD_UPLOAD_SAMPLE') or define('CMD_UPLOAD_SAMPLE', 'آپلود نمونه سوال 📤');
 
     // teacher mode options
     defined('CMD_INTRODUCE_TA') or define('CMD_INTRODUCE_TA', 'معرفی TA 👩‍🎓');

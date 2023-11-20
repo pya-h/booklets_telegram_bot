@@ -1,7 +1,7 @@
 <?php
 require_once './config.php';
 require_once './telegram_api.php';
-require_once './manage.php';
+require_once './handle.php';
 
 $update = getUpdate();
 // check user is a member in specified channels
