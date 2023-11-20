@@ -12,7 +12,7 @@ function addSample(&$user, array &$file): array {
 
         $item_id = Database::getInstance()->insert(
             'INSERT INTO ' . DB_TABLE_SAMPLES . " ($fields) " . ' VALUES (:course_id, :file_id, :title, :type)',
-                array('course_id' => $user[DB_USER_CACHE], 'file_id' => $file[FILE_ID], 'title' => $file[CAPTION_TAG], 'type' => $file['tag'])
+                array('course_id' => $user[DB_USER_CACHE], 'file_id' => $file[FILE_ID], 'title' => !empty($file[CAPTION_TAG]) ? $file[CAPTION_TAG] : 'بدون عنوان', 'type' => $file['tag'])
         );
         if(!$item_id || !resetAction($user[DB_ITEM_ID]))
             $err = 'مشکلی حین ثبت نمونه سوال پیش اومد. لطفا دوباره تلاش کن!';
@@ -41,7 +41,7 @@ function backupSample($sample_id, ?string $new_title = null): ?string
             'send' . ucfirst($sample[0][DB_ITEM_FILE_TYPE]),
             CHAT_ID, BACKUP_CHANNEL_ID,
             $sample[0][DB_ITEM_FILE_TYPE], $sample[0][DB_ITEM_FILE_ID],
-            CAPTION_TAG, $sample[0][DB_ITEM_NAME]
+            CAPTION_TAG, 'نمونه سوال: ' . $sample[0][DB_ITEM_NAME]
         );
     } else $err .= ' ارسال نمونه سوال به کانال بک آپ ناموفق بود!';
     return strlen($err) ? 'خطاها: ' . $err : null;

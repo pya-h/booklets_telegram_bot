@@ -441,7 +441,7 @@ function handleCasualMessage(&$update) {
                                 $result = addSample($user, $file);
                                 if(isset($result['err'])) $response = $result['err'];
                                 else {
-                                    if(updateAction($user_id, ACTION_SET_SAMPLE_TITLE, $user[DB_USER_CACHE] . RELATED_DATA_SEPARATOR . $result['id'])) {
+                                    if(setActionAndCache($user_id, ACTION_SET_SAMPLE_TITLE, $user[DB_USER_CACHE] . RELATED_DATA_SEPARATOR . $result['id'])) {
                                         $response = 'نمونه سوال مورد نظر با موفقیت ارسال شد. حالا عنوان آن را تایپ کنید:';
                                         $keyboard = array(INLINE_KEYBOARD => array(array(array(TEXT_TAG => 'استفاده از کپشن فایل', CALLBACK_DATA => 0))));
                                     } else $response = 'نمونه سوال ثبت شد ولی مشکلی حین ورود به حالت تعیین عنوان پیش آمد!';
@@ -782,7 +782,7 @@ function handleCallbackQuery(&$update) {
         } else $answer = 'کپشن موردنظرتو وارد کن:';
     } else if($user[DB_USER_ACTION] == ACTION_SET_SAMPLE_TITLE) {
         if(!$raw_data) {
-            $params = explode(RELATED_DATA_SEPARATOR, $data);
+            $params = explode(RELATED_DATA_SEPARATOR, $user[DB_USER_CACHE]);
             if(isset($params[1]))
                 $answer = backupSample($params[1]);
             else $answer = 'مشکلی حین ارسال نمونه سوال به کانال بک آپ پیش آمد!';
@@ -905,7 +905,7 @@ function handleCallbackQuery(&$update) {
             // or no second menu (upload sample)
             switch($params[0]) {
                 case DB_TABLE_COURSES:
-                    if($user[DB_USER_ACTION] !== ACTION_UPLOAD_SAMPLE) {
+                    if($user[DB_USER_ACTION] != ACTION_UPLOAD_SAMPLE) {
                         $answer = 'از بین اساتید ارائه کننده این درس استاد مورد نظر خود را انتخاب کنید:';
                         if($user[DB_USER_ACTION] == ACTION_DOWNLOAD_BOOKLET) {
                             $keyboard = createMenu(DB_TABLE_TEACHERS, $data, DB_ITEM_COURSE_ID . "=$params[1]",
@@ -993,6 +993,11 @@ function handleCallbackQuery(&$update) {
                             resetAction($user_id);
                             break;
                     }
+                    break;
+                case 'ns':
+                    $answer = 'نمونه سوال بعدی را همراه با کپشن بفرست:';
+                    if(!setActionAndCache($user_id, ACTION_SENDING_SAMPLE_FILE, $params[1]))
+                        $answer = 'مشکلی حین ورود به حالت آپلود نمونه سوال بعدی پیش آمد! لحظاتی دیگر دوباره تلاش کنید...';
                     break;
             }
         } else {

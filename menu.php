@@ -165,7 +165,7 @@ function getMainMenu(int $user_mode): array
                             [CMD_ADD_COURSE, CMD_EDIT_BOOKLET, CMD_ADD_TEACHER],
                             [CMD_MESSAGE_TO_TEACHER, CMD_TEACHER_BIOS],
                             [CMD_LINK_TEACHER, CMD_SEND_POST_TO_CHANNEL, CMD_NOTIFICATION],
-                            [CMD_FAVORITES]
+                            [CMD_FAVORITES, CMD_UPLOAD_SAMPLE]
                         ]
                     : [ // teacher, ta, normal user
                         [CMD_MESSAGE_TO_ADMIN, CMD_TEACHER_BIOS, CMD_DOWNLOAD_BOOKLET],
