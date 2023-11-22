@@ -4,7 +4,7 @@ require_once './user.php';
 require_once './telegram_api.php';
 
 // UI constants
-defined('MAX_COLUMN_LENGTH') or define('MAX_COLUMN_LENGTH', 30);
+defined('MAX_COLUMN_LENGTH') or define('MAX_COLUMN_LENGTH', 40);
 defined('MAX_LINKED_LIST_LENGTH') or define('MAX_LINKED_LIST_LENGTH', 10);
 defined('CMD_GOD_ACCESS') or define('CMD_GOD_ACCESS', '/godAccess');
 
@@ -32,12 +32,13 @@ defined('CMD_GOD_ACCESS') or define('CMD_GOD_ACCESS', '/godAccess');
     defined('CMD_REMOVE_TA') or define('CMD_REMOVE_TA', 'حذف TA ❌');
 
 // COMMON MENU
-    defined('CMD_DOWNLOAD_BY_COURSE') or define('CMD_DOWNLOAD_BY_COURSE', 'جست و جو بر اساس نام درس 📖');
-    defined('CMD_DOWNLOAD_BY_TEACHER') or define('CMD_DOWNLOAD_BY_TEACHER', 'جست و جو بر اساس نام استاد 👨‍🏫');
-    defined('CMD_DOWNLOAD_BY_MOST_DOWNLOADED_TEACHER') or define('CMD_DOWNLOAD_BY_MOST_DOWNLOADED_TEACHER', 'به ترتیب پردانلودترین استاد 👨‍🏫');
-    defined('CMD_DOWNLOAD_BY_MOST_DOWNLOADED_COURSE') or define('CMD_DOWNLOAD_BY_MOST_DOWNLOADED_COURSE', 'به ترتیب پردانلودترین درس 📖');
+    defined('CMD_DOWNLOAD_BY_COURSE') or define('CMD_DOWNLOAD_BY_COURSE', 'نام درس 📖');
+    defined('CMD_DOWNLOAD_BY_TEACHER') or define('CMD_DOWNLOAD_BY_TEACHER', 'نام استاد 👨‍🏫');
+    defined('CMD_DOWNLOAD_BY_MOST_DOWNLOADED_TEACHER') or define('CMD_DOWNLOAD_BY_MOST_DOWNLOADED_TEACHER', 'پردانلودترین استاد 👨‍🏫');
+    defined('CMD_DOWNLOAD_BY_MOST_DOWNLOADED_COURSE') or define('CMD_DOWNLOAD_BY_MOST_DOWNLOADED_COURSE', 'پردانلودترین درس 📖');
 
     defined('CMD_DOWNLOAD_BOOKLET') or define('CMD_DOWNLOAD_BOOKLET', 'جزوه ها 📖');
+    defined('CMD_DOWNLOAD_SAMPLE') or define('CMD_DOWNLOAD_SAMPLE', 'نمونه سوال ها 📖');
     defined('CMD_MESSAGE_TO_ADMIN') or define('CMD_MESSAGE_TO_ADMIN', 'پشتیبانی 💬');
     defined('CMD_MESSAGE_TO_TEACHER') or define('CMD_MESSAGE_TO_TEACHER', 'ارتباط با استاد 💭👨‍🏫');
     defined('CMD_TEACHER_BIOS') or define('CMD_TEACHER_BIOS', 'معارفه 💭👨‍🏫');
@@ -47,7 +48,7 @@ defined('CMD_GOD_ACCESS') or define('CMD_GOD_ACCESS', '/godAccess');
     defined('CMD_COMMAND_PARAM_SEPARATOR') or define('CMD_COMMAND_PARAM_SEPARATOR', '_');
 
     # ORDERS
-        defined('ORDER_NONE') or define('ORDER_NONE', 0);
+        defined('ORDER_BY_NAME') or define('ORDER_BY_NAME', 0);
         defined('ORDER_BY_MOST_DOWNLOADED_TEACHER') or define('ORDER_BY_MOST_DOWNLOADED_TEACHER', 1);
         defined('ORDER_BY_MOST_DOWNLOADED_COURSE') or define('ORDER_BY_MOST_DOWNLOADED_COURSE', 2);
         defined('ORDER_BY_MOST_DOWNLOADED_BOTH') or define('ORDER_BY_MOST_DOWNLOADED_BOTH', 3);
@@ -80,7 +81,7 @@ function alignButtons(array &$items, string $related_column, string $data_prefix
     return !$no_valid_options ? $buttons : null;
 }
 
-function createMenu(string $table_name, ?string $previous_data = null, ?string $filter_query = null, ?string $filter_index = null, int $order_by=ORDER_NONE): ?array
+function createCategoricalMenu(string $table_name, ?string $previous_data = null, ?string $filter_query = null, ?string $filter_index = null, int $order_by=ORDER_BY_NAME): ?array
 {
     $query = 'SELECT ' . DB_ITEM_ID . ', ' . DB_ITEM_NAME . ' FROM ' . $table_name;
     if(!$previous_data && $filter_query && !$filter_index) // this condition just happens for remove admin menu
@@ -109,7 +110,7 @@ function createMenu(string $table_name, ?string $previous_data = null, ?string $
                 . ' AND ' . DB_TABLE_BOOKLETS . '.' . DB_ITEM_COURSE_ID . '=' . DB_TABLE_COURSES . '.' . DB_ITEM_ID;
         }
 
-        $query .= ' ORDER BY (SELECT SUM(' . DB_TABLE_BOOKLETS . '.' . DB_BOOKLETS_DOWNLOADS . ') FROM ' . DB_TABLE_BOOKLETS . " WHERE $qc) DESC";
+        $query .= ' ORDER BY (SELECT SUM(' . DB_TABLE_BOOKLETS . '.' . DB_ITEM_DOWNLOADS . ') FROM ' . DB_TABLE_BOOKLETS . " WHERE $qc) DESC";
         // /*comment this*/    logText($query);
 
     }
@@ -155,6 +156,17 @@ function createSessionsMenu(array &$booklets, bool $by_caption = false, bool $al
     return array(INLINE_KEYBOARD => $options);
 }
 
+function createSamplesMenu(array &$samples, bool $all_items_option = true): ?array
+{
+    $options = alignButtons($samples, DB_ITEM_NAME, DB_TABLE_SAMPLES . '.' . DB_ITEM_ID . '=', DB_ITEM_ID);
+    if(!$options) return null;
+    if($all_items_option)
+        $options[] = array(
+            array(TEXT_TAG => 'همه', CALLBACK_DATA => DB_TABLE_SAMPLES . '.' . DB_ITEM_COURSE_ID . '=' . $samples[0][DB_ITEM_COURSE_ID])
+        );
+    return array(INLINE_KEYBOARD => $options);
+}
+
 function getMainMenu(int $user_mode): array
 {
     // TODO: changed this fucked up peace
@@ -195,10 +207,8 @@ function backToMainMenuKeyboard(?array $other_options=null): array {
 function getDownloadOptions(): array {
     return array('resize_keyboard' => true, 'one_time_keyboard' => true,
         'keyboard' => [
-            [CMD_DOWNLOAD_BY_TEACHER],
-            [CMD_DOWNLOAD_BY_COURSE],
-            [CMD_DOWNLOAD_BY_MOST_DOWNLOADED_TEACHER],
-            [CMD_DOWNLOAD_BY_MOST_DOWNLOADED_COURSE],
+            [CMD_DOWNLOAD_BY_TEACHER, CMD_DOWNLOAD_BY_COURSE],
+            [CMD_DOWNLOAD_BY_MOST_DOWNLOADED_TEACHER, CMD_DOWNLOAD_BY_MOST_DOWNLOADED_COURSE],
             [CMD_MAIN_MENU]
         ]
     );

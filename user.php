@@ -30,6 +30,9 @@ defined('ACTION_SEE_TEACHER_BIOS') or define('ACTION_SEE_TEACHER_BIOS', 23);
 defined('ACTION_UPLOAD_SAMPLE') or define('ACTION_UPLOAD_SAMPLE', 24);
 defined('ACTION_SENDING_SAMPLE_FILE') or define('ACTION_SENDING_SAMPLE_FILE', 25);
 defined('ACTION_SET_SAMPLE_TITLE') or define('ACTION_SET_SAMPLE_TITLE', 26);
+defined('ACTION_DOWNLOAD_SAMPLE') or define('ACTION_DOWNLOAD_SAMPLES', 27);
+defined('ACTION_SELECT_SAMPLE_TO_GET') or define('ACTION_SELECT_SAMPLE_TO_GET', 28);
+
 
 function getSuperiors(): ?array
 {
@@ -55,7 +58,7 @@ function getUser($id, string $username=null): array{
     if(count($user)) {
         if($username) $username = "@$username";
 
-        if($username != $user[DB_USER_USERNAME]) {
+        if($username != ($user[DB_USER_USERNAME] ?? '')) {
             updateUserField($id, $username, DB_USER_USERNAME);
             $user[0][DB_USER_USERNAME] = $username;
         }

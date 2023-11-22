@@ -46,3 +46,13 @@ function backupSample($sample_id, ?string $new_title = null): ?string
     } else $err .= ' ارسال نمونه سوال به کانال بک آپ ناموفق بود!';
     return strlen($err) ? 'خطاها: ' . $err : null;
 }
+
+function getSamples(string $filter='1=1', bool $increaseDownloads=false): ?array {
+    $db = Database::getInstance();
+    if($increaseDownloads)
+        $db->update('UPDATE ' . DB_TABLE_SAMPLES . ' SET ' . DB_ITEM_DOWNLOADS . '=' . DB_ITEM_DOWNLOADS . " + 1 WHERE $filter");
+    return $db->query(
+        'SELECT ' . DB_TABLE_SAMPLES . '.*,' . DB_TABLE_COURSES . '.' . DB_ITEM_NAME . ' as course FROM '. DB_TABLE_SAMPLES . ' JOIN ' . DB_TABLE_COURSES .
+                ' ON ' . DB_TABLE_COURSES . '.' . DB_ITEM_ID . '=' . DB_ITEM_COURSE_ID . " WHERE $filter"
+    );
+}

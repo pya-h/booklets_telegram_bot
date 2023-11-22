@@ -106,7 +106,7 @@ function getTeachersField($teacher_id, string $field=DB_ITEM_NAME) {
 function getBooklets(string $filter='1=1', bool $increaseDownloads=false): ?array {
     $db = Database::getInstance();
     if($increaseDownloads)
-        $db->update('UPDATE ' . DB_TABLE_BOOKLETS . ' SET ' . DB_BOOKLETS_DOWNLOADS . '=' . DB_BOOKLETS_DOWNLOADS . " + 1 WHERE $filter");
+        $db->update('UPDATE ' . DB_TABLE_BOOKLETS . ' SET ' . DB_ITEM_DOWNLOADS . '=' . DB_ITEM_DOWNLOADS . " + 1 WHERE $filter");
     return $db->query(
         'SELECT ' . DB_TABLE_BOOKLETS . '.*,' . DB_TABLE_COURSES . '.' . DB_ITEM_NAME . ' as course,' .
             DB_TABLE_TEACHERS . '.' . DB_ITEM_NAME . ' as teacher FROM '. DB_TABLE_BOOKLETS . ' JOIN ' . DB_TABLE_COURSES .
@@ -130,7 +130,7 @@ function getDownloadStatistics($teacher_id=null, $course_id=null, $booklet_id=nu
     }
     $condition = implode(' AND ', $conditions);
     
-    $result = Database::getInstance()->query("SELECT SUM(" . DB_BOOKLETS_DOWNLOADS .") AS TOTAL FROM " . DB_TABLE_BOOKLETS . " WHERE $condition");
+    $result = Database::getInstance()->query("SELECT SUM(" . DB_ITEM_DOWNLOADS .") AS TOTAL FROM " . DB_TABLE_BOOKLETS . " WHERE $condition");
     return $result[0]['TOTAL'] ?? 0;
 }
 
@@ -141,7 +141,7 @@ function getCourseName($course_id) {
 }
 
 function &getTeachersFullDownloadStats($teacher_id): string {
-    $teachers_booklets = Database::getInstance()->query("SELECT " . DB_BOOKLETS_DOWNLOADS . ", " . DB_ITEM_COURSE_ID . " FROM " 
+    $teachers_booklets = Database::getInstance()->query("SELECT " . DB_ITEM_DOWNLOADS . ", " . DB_ITEM_COURSE_ID . " FROM " 
         . DB_TABLE_BOOKLETS . " WHERE " . DB_ITEM_TEACHER_ID . "=$teacher_id");
     $courses = array();
     foreach($teachers_booklets as &$booklet) {
@@ -151,7 +151,7 @@ function &getTeachersFullDownloadStats($teacher_id): string {
                 'downloads' => 0
             );
         }
-        $courses[DB_ITEM_COURSE_ID]['downloads'] += $booklet[DB_BOOKLETS_DOWNLOADS];
+        $courses[DB_ITEM_COURSE_ID]['downloads'] += $booklet[DB_ITEM_DOWNLOADS];
     }
     $stats = "تعداد دانلود جزوات شما:\n\n";
     foreach($courses as &$course) {

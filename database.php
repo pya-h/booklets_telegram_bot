@@ -21,6 +21,8 @@ defined('DB_ITEM_TEACHER_ID') or define('DB_ITEM_TEACHER_ID','teacher_id');
 defined('DB_ITEM_COURSE_ID') or define('DB_ITEM_COURSE_ID','course_id');
 defined('DB_ITEM_USER_ID') or define('DB_ITEM_USER_ID','user_id');
 defined('DB_ITEM_FILE_ID') or define('DB_ITEM_FILE_ID','file_id');
+defined('DB_ITEM_FILE_TYPE') or define('DB_ITEM_FILE_TYPE','type');
+defined('DB_ITEM_DOWNLOADS') or define('DB_ITEM_DOWNLOADS','downloads');
 
 // database table user fields:
 defined('DB_USER_USERNAME') or define('DB_USER_USERNAME','username');
@@ -34,8 +36,6 @@ defined('DB_TEACHER_BIO') or define('DB_TEACHER_BIO', 'bio');
 //database table:booklets fields
 defined('DB_BOOKLETS_CAPTION') or define('DB_BOOKLETS_CAPTION','caption');
 defined('DB_BOOKLETS_INDEX') or define('DB_BOOKLETS_INDEX','index_name');
-defined('DB_ITEM_FILE_TYPE') or define('DB_ITEM_FILE_TYPE','type');
-defined('DB_BOOKLETS_DOWNLOADS') or define('DB_BOOKLETS_DOWNLOADS','downloads');
 
 //database table:messages fields
 defined('DB_MESSAGES_SENDER_ID') or define('DB_MESSAGES_SENDER_ID','sender_id');
@@ -173,4 +173,8 @@ function getStatistics(): array
 function selectBookletByCategoriesCondition($teacher_id, $course_id): string {
   return DB_TABLE_BOOKLETS . '.' . DB_ITEM_TEACHER_ID . "=$teacher_id AND "
       . DB_TABLE_BOOKLETS . '.' . DB_ITEM_COURSE_ID . "=$course_id";
+}
+
+function entityIsReferencedInAnotherTableQuery($table, $another_table, $foreign_key): string {
+  return "(select count(" . DB_ITEM_ID . ") from $another_table where $table." . DB_ITEM_ID . " = $another_table.$foreign_key) > 0";
 }
