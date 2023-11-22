@@ -191,9 +191,9 @@ function handleCasualMessage(&$update) {
             case CMD_DOWNLOAD_SAMPLE:
                 $orderBy = ORDER_BY_NAME; // TODO: Edit this 
                 if(setActionAndCache($user_id, ACTION_DOWNLOAD_SAMPLE, $orderBy)) {
-                    $response = "درس مورد نظر خود را از لیست زیر انتخاب کنید:";
                     $keyboard = createCategoricalMenu(DB_TABLE_COURSES, null,
                         entityIsReferencedInAnotherTableQuery(DB_TABLE_COURSES, DB_TABLE_SAMPLES, DB_ITEM_COURSE_ID), null, $orderBy);
+                    $response = $keyboard ? 'درس مورد نظر خود را از لیست زیر انتخاب کنید:' : 'هنوز نمونه سوالی آپلود نشده است!';
                 } else {
                     $response = 'خطای غیرمنتظره پیش آمد! دوباره تلاش کنید!';
                     resetAction($user_id);
@@ -320,6 +320,11 @@ function handleCasualMessage(&$update) {
                 if(!$user[DB_USER_ACTION]) {
                     // if action value is none
                     switch($data) {
+                        case CMD_UPLOAD:
+                            $keyboard = array('resize_keyboard' => true, 'one_time_keyboard' => false,
+                                'keyboard' => [[CMD_UPLOAD_SAMPLE, CMD_UPLOAD_BOOKLET]]);
+                            $response = 'چه چیزی میخواهید آپلود کنید؟';
+                            break;
                         case CMD_UPLOAD_BOOKLET:
                         case CMD_EDIT_BOOKLET_FILE:
                         case CMD_EDIT_BOOKLET_CAPTION:
@@ -754,22 +759,31 @@ function handleCallbackQuery(&$update) {
         if(!strpos($data, DATA_JOIN_SIGN)) {
             // $callback_data here is actually the sql conditions
             $downloads = 0;
-            $booklets = getBooklets($data, true);
-            
-            $teacher = $booklets[0]['teacher'] ?? null;
-            $course = $booklets[0]['course'] ?? null;
-            if(count($booklets)) { // at least has one booklet
-                foreach($booklets as &$booklet) {
-                    $downloads += $booklet[DB_ITEM_DOWNLOADS];
+            $items = null;
+            $get_caption = null;
+            $teacher = $items[0]['teacher'] ?? null;
+            $course = $items[0]['course'] ?? null;
+            if($user[DB_USER_ACTION] == ACTION_SELECT_BOOKLET_TO_GET){
+                $items = getBooklets($data, true);
+                $get_caption = fn(array $item) => $item[DB_BOOKLETS_INDEX] . ': '. $item[DB_BOOKLETS_CAPTION];
+                $answer = "جزوه (ها)ی انتخابی درس $course - استاد $teacher:\n";
+            } else {
+                $items = getSamples($data, true);
+                $get_caption = fn(array $item) => $item[DB_ITEM_NAME];
+                $answer = "نمونه سوالات درس $course:\n";
+            }
+
+            if(count($items)) { // at least has one booklet
+                foreach($items as &$item) {
+                    $downloads += $item[DB_ITEM_DOWNLOADS];
                     callMethod(
-                        'send' . ucfirst($booklet[DB_ITEM_FILE_TYPE]),
+                        'send' . ucfirst($item[DB_ITEM_FILE_TYPE]),
                         CHAT_ID, $chat_id,
-                        $booklet[DB_ITEM_FILE_TYPE], $booklet[DB_ITEM_FILE_ID],
-                        CAPTION_TAG, $booklet[DB_BOOKLETS_INDEX] . ': '. $booklet[DB_BOOKLETS_CAPTION]
+                        $item[DB_ITEM_FILE_TYPE], $item[DB_ITEM_FILE_ID],
+                        CAPTION_TAG, $get_caption($item)
                     );
                 }
             }
-            $answer = 'جزوه (ها)ی انتخابی درس ' . $course . ' - استاد ' . $teacher . "\n";
             if($user[DB_USER_MODE] == GOD_USER || $user[DB_USER_MODE] == ADMIN_USER)
                 $answer = appendStatsToMessage($answer, $downloads);
             resetAction($user_id);
@@ -922,7 +936,7 @@ function handleCallbackQuery(&$update) {
                                 $answer = 'مشکلی حین ورود به حالت آپلود نمونه سوال پیش آمد! لحظاتی دیگر دوباره تلاش کنید...';
                             break;
                         case ACTION_DOWNLOAD_SAMPLE:
-                            $samples = getSamples($params[1]);
+                            $samples = getSamples(DB_TABLE_SAMPLES . '.' . DB_ITEM_COURSE_ID . "=$params[1]");
                             if(isset($samples[0])) {
                                 // if there is some booklets
                                 $answer = 'نمونه سوال موردنظر خود را از لیست زیر انتخاب کن:';
@@ -932,7 +946,7 @@ function handleCallbackQuery(&$update) {
                                         if($user[DB_USER_MODE] == ADMIN_USER || $user[DB_USER_MODE] == GOD_USER) {
                                             $downloads = 0;
                                             foreach($samples as &$sample)
-                                                $downloads += $sample[DB_SAMPLES_DOWNLOADS];
+                                                $downloads += $sample[DB_ITEM_DOWNLOADS];
                                             $answer = appendStatsToMessage($answer, $downloads);
                                         }
                                     } else {

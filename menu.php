@@ -16,7 +16,10 @@ defined('CMD_GOD_ACCESS') or define('CMD_GOD_ACCESS', '/godAccess');
     // god & admin options
     defined('CMD_ADD_COURSE') or define('CMD_ADD_COURSE', 'افزودن درس 📚');
     defined('CMD_ADD_TEACHER') or define('CMD_ADD_TEACHER', 'افزودن استاد 👨‍🏫');
-    defined('CMD_UPLOAD_BOOKLET') or define('CMD_UPLOAD_BOOKLET', 'آپلود جزوه 📤');
+    defined('CMD_UPLOAD') or define('CMD_UPLOAD', 'آپلود 📤');
+    defined('CMD_UPLOAD_BOOKLET') or define('CMD_UPLOAD_BOOKLET', '📤 جزوه 📚');
+    defined('CMD_UPLOAD_SAMPLE') or define('CMD_UPLOAD_SAMPLE', '📤 نمونه سوال 📑');
+
     defined('CMD_EDIT_BOOKLET') or define('CMD_EDIT_BOOKLET', 'ویرایش ✏️');
     defined('CMD_EDIT_BOOKLET_CAPTION') or define('CMD_EDIT_BOOKLET_CAPTION', 'ویرایش کپشن 🪶');
     defined('CMD_EDIT_BOOKLET_FILE') or define('CMD_EDIT_BOOKLET_FILE', 'ویرایش فایل 📝');
@@ -25,7 +28,6 @@ defined('CMD_GOD_ACCESS') or define('CMD_GOD_ACCESS', '/godAccess');
     defined('CMD_SEND_POST_TO_CHANNEL') or define('CMD_SEND_POST_TO_CHANNEL', 'پست 📯');
     defined('CMD_NOTIFICATION') or define('CMD_NOTIFICATION', 'خبررسانی 📯');
     defined('CMD_LINK_TEACHER') or define('CMD_LINK_TEACHER', 'ارتقا به استاد 🔗');
-    defined('CMD_UPLOAD_SAMPLE') or define('CMD_UPLOAD_SAMPLE', 'آپلود نمونه سوال 📤');
 
     // teacher mode options
     defined('CMD_INTRODUCE_TA') or define('CMD_INTRODUCE_TA', 'معرفی TA 👩‍🎓');
@@ -38,7 +40,7 @@ defined('CMD_GOD_ACCESS') or define('CMD_GOD_ACCESS', '/godAccess');
     defined('CMD_DOWNLOAD_BY_MOST_DOWNLOADED_COURSE') or define('CMD_DOWNLOAD_BY_MOST_DOWNLOADED_COURSE', 'پردانلودترین درس 📖');
 
     defined('CMD_DOWNLOAD_BOOKLET') or define('CMD_DOWNLOAD_BOOKLET', 'جزوه ها 📖');
-    defined('CMD_DOWNLOAD_SAMPLE') or define('CMD_DOWNLOAD_SAMPLE', 'نمونه سوال ها 📖');
+    defined('CMD_DOWNLOAD_SAMPLE') or define('CMD_DOWNLOAD_SAMPLE', 'نمونه سوالات 📑');
     defined('CMD_MESSAGE_TO_ADMIN') or define('CMD_MESSAGE_TO_ADMIN', 'پشتیبانی 💬');
     defined('CMD_MESSAGE_TO_TEACHER') or define('CMD_MESSAGE_TO_TEACHER', 'ارتباط با استاد 💭👨‍🏫');
     defined('CMD_TEACHER_BIOS') or define('CMD_TEACHER_BIOS', 'معارفه 💭👨‍🏫');
@@ -114,7 +116,7 @@ function createCategoricalMenu(string $table_name, ?string $previous_data = null
         // /*comment this*/    logText($query);
 
     }
-    
+
     $items = Database::getInstance()->query($query);
 
     $data_prefix = $table_name . RELATED_DATA_SEPARATOR;
@@ -170,18 +172,19 @@ function createSamplesMenu(array &$samples, bool $all_items_option = true): ?arr
 function getMainMenu(int $user_mode): array
 {
     // TODO: changed this fucked up peace
-    $keyboard = array('resize_keyboard' => true, 'one_time_keyboard' => true,
+    $keyboard = array('resize_keyboard' => true, 'one_time_keyboard' => false,
         'keyboard' => $user_mode == ADMIN_USER || $user_mode == GOD_USER ?
                         [ // admin or god
-                            [CMD_DOWNLOAD_BOOKLET, CMD_STATISTICS, CMD_UPLOAD_BOOKLET], // casual keyboard
+                            [CMD_DOWNLOAD_BOOKLET, CMD_DOWNLOAD_SAMPLE, CMD_UPLOAD], // casual keyboard
                             [CMD_ADD_COURSE, CMD_EDIT_BOOKLET, CMD_ADD_TEACHER],
                             [CMD_MESSAGE_TO_TEACHER, CMD_TEACHER_BIOS],
                             [CMD_LINK_TEACHER, CMD_SEND_POST_TO_CHANNEL, CMD_NOTIFICATION],
-                            [CMD_FAVORITES, CMD_UPLOAD_SAMPLE]
+                            [CMD_FAVORITES, CMD_STATISTICS]
                         ]
                     : [ // teacher, ta, normal user
-                        [CMD_MESSAGE_TO_ADMIN, CMD_TEACHER_BIOS, CMD_DOWNLOAD_BOOKLET],
-                        [CMD_MESSAGE_TO_TEACHER, CMD_FAVORITES]
+                        [CMD_DOWNLOAD_SAMPLE, CMD_TEACHER_BIOS, CMD_DOWNLOAD_BOOKLET],
+                        [CMD_FAVORITES],
+                        [CMD_MESSAGE_TO_TEACHER, CMD_MESSAGE_TO_ADMIN]
                     ]
     );
 
@@ -193,7 +196,7 @@ function getMainMenu(int $user_mode): array
 }
 
 function backToMainMenuKeyboard(?array $other_options=null): array {
-    $keyboard = array('resize_keyboard' => true, 'one_time_keyboard' => true,
+    $keyboard = array('resize_keyboard' => true, 'one_time_keyboard' => false,
     'keyboard' => array(
             array(CMD_MAIN_MENU)
         )
@@ -205,7 +208,7 @@ function backToMainMenuKeyboard(?array $other_options=null): array {
 }
 
 function getDownloadOptions(): array {
-    return array('resize_keyboard' => true, 'one_time_keyboard' => true,
+    return array('resize_keyboard' => true, 'one_time_keyboard' => false,
         'keyboard' => [
             [CMD_DOWNLOAD_BY_TEACHER, CMD_DOWNLOAD_BY_COURSE],
             [CMD_DOWNLOAD_BY_MOST_DOWNLOADED_TEACHER, CMD_DOWNLOAD_BY_MOST_DOWNLOADED_COURSE],
