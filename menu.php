@@ -1,7 +1,7 @@
 <?php
 require_once './database.php';
 require_once './user.php';
-require_once './telegram_api.php';
+require_once './bot.php';
 
 // UI constants
 defined('MAX_COLUMN_LENGTH') or define('MAX_COLUMN_LENGTH', 40);

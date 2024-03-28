@@ -1,6 +1,6 @@
 <?php
 require_once './database.php';
-require_once './telegram_api.php';
+require_once './bot.php';
 require_once './user.php';
 
 

@@ -41,7 +41,7 @@ defined('METH_DELETE_MESSAGE') or define('METH_DELETE_MESSAGE', 'deleteMessage')
 defined('METH_GET_CHAT_MEMBER') or define('METH_GET_CHAT_MEMBER', 'getChatMember');
 
 // BOT SPECIFIC CONSTANTS
-defined('URL_BASE') or define('URL_BASE', "https://api.telegram.org/bot". TOKEN . "/");
+defined('URL_BASE') or define('URL_BASE', "https://api.telegram.org/bot" . TOKEN . "/");
 
 defined('BACKUP_CHANNEL_ID') or define('BACKUP_CHANNEL_ID', -1001724496283);
 
@@ -55,16 +55,18 @@ defined('PERSIAN_COLLEGE_BOT_LINK') or define('PERSIAN_COLLEGE_BOT_LINK', 'https
 defined('PERSIAN_COLLEGE_YOUTRUBE_LINK') or define('PERSIAN_COLLEGE_YOUTRUBE_LINK', 'https://youtube.com/@Persian_College?sub_confirmation=1');
 
 // TELEGRAM API GENERAL FUNCTIONS
-function getUpdate(bool $as_array = true): ?array {
+function getUpdate(bool $as_array = true): ?array
+{
     $content = file_get_contents("php://input");
     return json_decode($content, $as_array);
 }
 
-function callMethod(string $method, ...$params): ?string {
+function callMethod(string $method, ...$params): ?string
+{
     // callMethod('method', 'key1', value1, 'key2', value2, ...)
     $payload = array("method" => $method);
     $len_params = count($params);
-    for($i = 0; $i < $len_params - 1; $i += 2) {
+    for ($i = 0; $i < $len_params - 1; $i += 2) {
         $payload[$params[$i]] = $params[$i + 1];
     }
 
@@ -81,19 +83,34 @@ function getFileFrom(array &$message): ?array
 {
     $file_types = [FILE_PHOTO, FILE_VOICE, FILE_VIDEO, FILE_AUDIO, FILE_DOCUMENT];
 
-    foreach($file_types as $tag) {
-        if(isset($message[$tag])) {
+    foreach ($file_types as $tag) {
+        if (isset($message[$tag])) {
             $file_id = $tag != FILE_PHOTO
-                ? $message[$tag][FILE_ID]
-                : $message[$tag][count($message[FILE_PHOTO]) - 1][FILE_ID];
+            ? $message[$tag][FILE_ID]
+            : $message[$tag][count($message[FILE_PHOTO]) - 1][FILE_ID];
             return array(FILE_ID => $file_id, 'tag' => $tag, CAPTION_TAG => $message[CAPTION_TAG] ?? '');
-
         }
     }
     return null;
 }
 
-function extractFromSentMessage(string &$telegram_response, string $field=MESSAGE_ID_TAG) {
+function extractFromSentMessage(string &$telegram_response, string $field = MESSAGE_ID_TAG)
+{
     $channel_response = json_decode($telegram_response, true);
     return $channel_response['result'][$field] ?? null;
+}
+
+function jsonifyData(string $action, ?array $params, ?array $state_data = null): string
+{
+    return json_encode(
+        ["a" => $action, "p" => $params, "s" => $state_data]
+    );
+}
+
+function validateInlineData(array &$params, ...$required_keys): ?string {
+    foreach($required_keys as $key) {
+        if(!isset($params[$key]))
+            return 'این عملیات فابل ادامه دادن نیست! علت احتمالی این فرایند غیرمعتبر بودن گزینه انتخابی یا از دست رفتن اطلاعات حین انتقال است.';
+    }
+    return null;
 }
