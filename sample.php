@@ -1,6 +1,6 @@
 <?php
-require_once 'database.php';
-require_once 'bot.php';
+require_once __DIR__ . '/database.php';
+require_once __DIR__ . '/bot.php';
 
 function addSample(&$user, array &$file): array {
     if(!isset($user[DB_USER_CACHE]))

@@ -1,7 +1,7 @@
 <?php
-require_once './database.php';
-require_once './bot.php';
-require_once './user.php';
+require_once __DIR__ . '/database.php';
+require_once __DIR__ . '/bot.php';
+require_once __DIR__ . '/user.php';
 
 
 function addCategory(string $category_name, string $value, $performer_id) {
