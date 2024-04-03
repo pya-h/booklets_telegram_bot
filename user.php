@@ -10,6 +10,10 @@ function getSuperiors(): ?array
         .' WHERE ' . DB_USER_MODE . '=' . GOD_USER . ' OR ' . DB_USER_MODE . '=' . ADMIN_USER);
 }
 
+function isSuperior(&$user): bool {
+    return $user[DB_USER_MODE] == ADMIN_USER || $user[DB_USER_MODE] == GOD_USER;
+}
+
 function getCertainUsers(int $user_mode): ?array {
     return Database::getInstance()->query('SELECT * FROM '. DB_TABLE_USERS
         .' WHERE ' . DB_USER_MODE . '=:mode', array('mode' => $user_mode));

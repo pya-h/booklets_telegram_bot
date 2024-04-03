@@ -43,7 +43,7 @@ function createCategoricalMenu(int $action, ?string $table_name, ?array $state, 
 
     if(!$order_by) {
         $query .= ' ORDER BY ' . DB_ITEM_NAME;
-    } else if($table_name == DB_TABLE_COURSES || $table_name == DB_TABLE_TEACHERS) {
+    } else {
         $qc = null;
         if($order_by != ORDER_BY_MOST_DOWNLOADED_BOTH) {
             $order_conditions = [
@@ -102,15 +102,29 @@ function createUsersMenu(string $filter_query, string $filter_index = DB_ITEM_ID
     return $options ? array(INLINE_KEYBOARD => $options) : null;
 }
 
-function createSessionsMenu(array &$booklets, bool $by_caption = false, bool $all_items_option = true): ?array
+function createSessionsMenu(int $action, array &$booklets, array $categories, bool $all_items_option = true): ?array
 {
+    $by_caption = $categories['options'];
+
+    $getData = fn($id) => [
+        'a' => $action,
+        's' => [
+            'tc' => $categories[DB_ITEM_TEACHER_ID],
+            'cr' => $categories[DB_ITEM_COURSE_ID],
+            'x' => $categories['options']
+        ],
+        'p' => [
+            't' => 'bk',
+            'id' => $id
+        ]
+    ];
+
     $options = alignButtons($booklets, !$by_caption ? DB_BOOKLETS_INDEX : DB_BOOKLETS_CAPTION,
-        DB_TABLE_BOOKLETS . '.' . DB_ITEM_ID . '=', DB_ITEM_ID, null, $by_caption);
+        $getData, DB_ITEM_ID, null, $by_caption);
     if(!$options) return null;
     if($all_items_option)
         $options[] = array(
-            array(TEXT_TAG => 'همه', CALLBACK_DATA => DB_TABLE_BOOKLETS . '.' . DB_ITEM_TEACHER_ID . '=' . $booklets[0][DB_ITEM_TEACHER_ID] 
-                . ' AND ' . DB_TABLE_BOOKLETS . '.' . DB_ITEM_COURSE_ID . '=' . $booklets[0][DB_ITEM_COURSE_ID])
+            array(TEXT_TAG => 'همه', CALLBACK_DATA => $getData(-1))
         );
     return array(INLINE_KEYBOARD => $options);
 }
@@ -189,9 +203,8 @@ function createLinkedList(array $booklets = array(), $page=0): string {
     return !empty($list) ? $list : 'شما هنوز چیزی به علاقه مندی های خود اضافه نکرده اید!';
 }
 
-function createClassifyByMenu($user_id, &$categories): array {
+function createClassifyByMenu($user_id, &$categories, $callback_data): array {
     $is_in_favs = isInFavoritesList($user_id, $categories);
-    $data = makeCategoryString($categories[DB_ITEM_COURSE_ID], $categories[DB_ITEM_TEACHER_ID]);
     switch($categories['options']) {
         case '+f':
             if(!$is_in_favs)
@@ -204,16 +217,22 @@ function createClassifyByMenu($user_id, &$categories): array {
             $is_in_favs = false;
             break;
     }
-    return array(
-        INLINE_KEYBOARD => array(
-            array(
-                array(TEXT_TAG => 'شماره جزوه', CALLBACK_DATA => $data . DATA_JOIN_SIGN . '0'),
-                array(TEXT_TAG => 'عنوان جزوه', CALLBACK_DATA => $data . DATA_JOIN_SIGN . '1'),
-            ),
-            array(
-                !$is_in_favs ? array(TEXT_TAG => 'افزودن به علاقه مندی ها ❤️',  CALLBACK_DATA => $data . DATA_JOIN_SIGN . '+f')
-                    :  array(TEXT_TAG => 'حذف از علاقه مندی ها ❌',  CALLBACK_DATA => $data . DATA_JOIN_SIGN . '-f')
-            )
-        )
-    );
+
+    $addExtraToCallbackData = function($value) use ($callback_data) {
+        $callback_data['x'] = $value;
+        return json_encode($callback_data);
+    };
+
+    return [
+        INLINE_KEYBOARD => [
+            [
+                [TEXT_TAG => 'شماره جزوه', CALLBACK_DATA => $addExtraToCallbackData(0)],
+                [TEXT_TAG => 'عنوان جزوه', CALLBACK_DATA => $addExtraToCallbackData(1)],
+            ],
+            [
+                !$is_in_favs ? [TEXT_TAG => 'افزودن به علاقه مندی ها ❤️', CALLBACK_DATA => $addExtraToCallbackData('+f')]
+                    :  [TEXT_TAG => 'حذف از علاقه مندی ها ❌', CALLBACK_DATA => $addExtraToCallbackData('-f')]
+            ]
+        ]
+    ];
 }

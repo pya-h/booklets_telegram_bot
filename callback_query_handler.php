@@ -34,19 +34,27 @@ function handleCallbackQuery(&$update)
 
         switch ($action) {
             case IA_UPLOAD_BOOKLET:
+                // TODO: Create the first menu in message_handler.php
+            if($user[DB_USER_MODE] != ADMIN_USER || $user[DB_USER_MODE] != GOD_USER)
+                {
+                    $answer = 'شما اجازه انجام چنین کاری را ندارید!';
+                    break;
+                }
                 if(($answer = validateCategoricalCallbackData($params)) !== null)
                     break;
                 if(!$state) {
                     if($params['t'] !== 'cr' && $params['t'] !== 'tc')
                         $answer = 'متاسفانه به دلیلی نامشخص فرایند آپلود در حالت اشتباهی اتظیم شده است. لطفا از دوباره تلاش کنند. اگر بازهم به این مشکل برخوردید با دولوپر در میان بگذارید.';
-                    else
+                    else {
                         $keyboard = createCategoricalMenu(IA_UPLOAD_BOOKLET, null, $params, false);
+                        $answer = $params['t'] === 'cr' ? 'از بین اساتید ارائه کننده این درس استاد مورد نظر خود را انتخاب کنید:'
+                            : 'از بین درس های ارایه شده توسط استاد یکی را انتخاب کنید:';
+                    }
 
                 } else {
                     // bot categories are selected:
                     // the if below, sets user action and its cache to prepare for getting the booklet
-                    $selections = [$params, $state];
-                    $categories = extractCategories($selections);
+                    $categories = extractCategories([$params, $state]);
                     if (setActionAndCache($user_id, ACTION_SENDING_BOOKLET_FILE, json_encode($categories))) {
                         $answer = 'جزوه مورد نظرت رو همراه با کپشن بفرست:';
                         callMethod(METH_SEND_MESSAGE,
@@ -67,6 +75,12 @@ function handleCallbackQuery(&$update)
                 }
                 break;
             case IA_UPLOAD_SAMPLE:
+                // TODO: Create the first menu in message_handler.php
+                if($user[DB_USER_MODE] != ADMIN_USER || $user[DB_USER_MODE] != GOD_USER)
+                {
+                    $answer = 'شما اجازه انجام چنین کاری را ندارید!';
+                    break;
+                }
                 if(!isset($params['t']) || $params['t'] !== 'cr' || !isset($params['id']) || $params['id'] < 0) {
                     $answer = '.برای آپلود نمونه سوال باید درس مربوطه از منو انتخاب شود. متاسفانه شما این مرحله را به درستی طی نکرده اید. لطفا دوباره تلاش کنید..';
                     break;
@@ -77,7 +91,8 @@ function handleCallbackQuery(&$update)
                     $answer = 'مشکلی حین ورود به حالت آپلود نمونه سوال پیش آمد! لحظاتی دیگر دوباره تلاش کنید...';
 
                 break;
-            case IA_DOWNLOAD_SAMPLE:
+            case IA_LIST_SAMPLES:
+                // FIXME: update create menu function
                 if(!isset($params['t']) || $params['t'] !== 'cr' || !isset($params['id']) || $params['id'] < 0) {
                     $answer = 'برای مشاهده لیست نمونه سوالات هر درس باید درس مربوطه را انتخاب کنید وای به نظر می رسد به دلیلی نامعلوم درسی انتخاب نشده است! لطفا دوباره تلاش کنید ...';
                     break;
@@ -87,10 +102,9 @@ function handleCallbackQuery(&$update)
                 if (isset($samples[0])) {
                     // if there is some booklets
                     $answer = 'نمونه سوال موردنظر خود را از لیست زیر انتخاب کن:';
-                    //if($user[DB_USER_ACTION] == ACTION_DOWNLOAD_SAMPLE) {
                     if (updateAction($user_id, ACTION_SELECT_SAMPLE_TO_GET)) {
                         $keyboard = createSamplesMenu($samples);
-                        if ($user[DB_USER_MODE] == ADMIN_USER || $user[DB_USER_MODE] == GOD_USER) {
+                        if (isSuperior($user)) {
                             $downloads = 0;
                             foreach ($samples as &$sample) {
                                 $downloads += $sample[DB_ITEM_DOWNLOADS];
@@ -108,7 +122,73 @@ function handleCallbackQuery(&$update)
                     resetAction($user_id);
                 }
                 break;
+            case IA_LIST_BOOKLETS:
+                if(!$state) {
+                    // TODO: Create the first menu in message_handler.php
+                    if(($answer = validateCategoricalCallbackData($params)) !== null)
+                        break;
 
+                    if($params['t'] !== 'cr' && $params['t'] !== 'tc')
+                        $answer = 'متاسفانه به دلیلی نامشخص فرایند دانلود در حالت اشتباهی تنظیم شده است. لطفا از دوباره تلاش کنند. اگر بازهم به این مشکل برخوردید با دولوپر در میان بگذارید.';
+                    else {
+                        $answer = $params['t'] === 'cr' ? 'از بین اساتید ارائه کننده این درس استاد مورد نظر خود را انتخاب کنید:'
+                            : 'از بین درس های ارایه شده توسط استاد یکی را انتخاب کنید:';
+                        $extra = $data['x'] ?? ORDER_BY_NAME;
+                        $keyboard = createCategoricalMenu(IA_LIST_BOOKLETS, null, $params,
+                            true, $extra);
+
+                        if (isSuperior($user) && $keyboard) {
+                            $answer = appendStatsToMessage($answer, getDownloadStatistics(null, $params[1]));
+                        }
+                    }
+                    break;
+                }
+            case IA_EDIT_BOOKLET_CAPTION:
+            case IA_EDIT_BOOKLET_FILE:
+                if(($answer = validateCategoricalCallbackData($params)) !== null)
+                    break;
+                $categories = extractCategories([$params, $state], $data['x']);
+                if ($categories['options'] == '0' || $categories['options'] == '1') {
+                    if (isset($categories['err'])) {
+                        $answer = $categories['err'];
+                    } else {
+                        $booklets = getBooklets(
+                            selectBookletByCategoriesCondition($categories[DB_ITEM_TEACHER_ID], $categories[DB_ITEM_COURSE_ID])
+                        );
+                        if (isset($booklets[0])) {
+                            // if there is some booklets
+                            $answer = 'استاد ' . $booklets[0]['teacher'] . ' - ' . $booklets[0]['course'] . "\n\n جزوه ی موردنظرتو از لیست زیر انتخاب کن:";
+                            if ($user[DB_USER_ACTION] == IA_LIST_BOOKLETS) {
+
+                                $keyboard = createSessionsMenu(IA_GET_BOOKLET, $booklets, $categories);
+                                if (isSuperior($user)) {
+                                    $downloads = 0;
+                                    foreach ($booklets as &$booklet) {
+                                        $downloads += $booklet[DB_ITEM_DOWNLOADS];
+                                    }
+
+                                    $answer = appendStatsToMessage($answer, $downloads);
+                                }
+
+                            } else {
+                                // FIXME: Change this
+                                if (setActionAndCache($user_id, ACTION_SELECT_BOOKLET_TO_EDIT, $user[DB_USER_ACTION])) {
+                                    $keyboard = createSessionsMenu($booklets, $categories, false);
+                                } else {
+                                    $answer = 'مشکلی حین دریافت اطلاعات پیش آمد! لطفا لحظاتی بعد دوباره تلاش کنید.';
+                                    resetAction($user_id);
+                                }
+                            }
+                        } else {
+                            $answer = 'هنوز جزوه ای آپلود نشده!';
+                            resetAction($user_id);
+                        }
+                    }
+                } else {
+                    $answer = 'طبقه بندی جزوه ها بر اساس:';
+                    $keyboard = createClassifyByMenu($user_id, $categories, $data);
+                }
+                break;
             case IA_SHOW_MESSAGE:
                 // user wants to see admin message
                 ;
@@ -190,16 +270,25 @@ function handleCallbackQuery(&$update)
                 }
 
                 $downloads = 0;
-                $selections = $params['sel'];
+                $selections = $params;
+                $choice = $selections['id'];
+                $course_id = $state['cr'];
 
                 if ($action === IA_GET_BOOKLET) {
-                    $items = getBooklets($selections, true);
+                    $teacher_id = $state['tc'];
+                    $filter = $choice >= 0
+                        ? DB_ITEM_ID . "=$choice"
+                        : DB_ITEM_TEACHER_ID . "=$teacher_id" . ' AND ' . DB_ITEM_COURSE_ID . "=$course_id";
+                    $items = getBooklets($filter, true);
                     $teacher = $items[0]['teacher'] ?? null;
                     $course = $items[0]['course'] ?? null;
                     $get_caption = fn(array $item) => $item[DB_BOOKLETS_INDEX] . ': ' . $item[DB_BOOKLETS_CAPTION];
                     $answer = "جزوه (ها)ی انتخابی درس $course - استاد $teacher:\n";
                 } else {
-                    $items = getSamples($selections, true);
+                    $filter = $choice >= 0
+                        ? DB_ITEM_ID . "=$choice"
+                        : DB_ITEM_COURSE_ID . "=$course_id";
+                    $items = getSamples($filter, true);
                     $course = $items[0]['course'] ?? null;
                     $get_caption = fn(array $item) => $item[DB_ITEM_NAME];
                     $answer = "نمونه سوالات درس $course:\n";
@@ -216,7 +305,7 @@ function handleCallbackQuery(&$update)
                         );
                     }
                 }
-                if ($user[DB_USER_MODE] == GOD_USER || $user[DB_USER_MODE] == ADMIN_USER) {
+                if (isSuperior($user)) {
                     $answer = appendStatsToMessage($answer, $downloads);
                 }
 
@@ -322,62 +411,6 @@ function handleCallbackQuery(&$update)
         }
 
         resetAction($user_id);
-    } else if (strpos($data, DATA_JOIN_SIGN) !== false) {
-        switch ($user[DB_USER_ACTION]) {
-            case ACTION_DOWNLOAD_BOOKLET:
-            case ACTION_EDIT_BOOKLET_CAPTION:
-            case ACTION_EDIT_BOOKLET_FILE:
-                $categories = extractCategories($data);
-                if ($categories['options'] == '0' || $categories['options'] == '1') {
-                    if (isset($categories['err'])) {
-                        $answer = $categories['err'];
-                    } else {
-                        $booklets = getBooklets(
-                            selectBookletByCategoriesCondition($categories[DB_ITEM_TEACHER_ID], $categories[DB_ITEM_COURSE_ID])
-                        );
-                        if (isset($booklets[0])) {
-                            // if there is some booklets
-                            $answer = 'استاد ' . $booklets[0]['teacher'] . ' - ' . $booklets[0]['course'] . "\n\n جزوه ی موردنظرتو از لیست زیر انتخاب کن:";
-                            if ($user[DB_USER_ACTION] == ACTION_DOWNLOAD_BOOKLET) {
-                                if (updateAction($user_id, ACTION_SELECT_BOOKLET_TO_GET)) {
-                                    $keyboard = createSessionsMenu($booklets, $categories['options']);
-                                    if ($user[DB_USER_MODE] == ADMIN_USER || $user[DB_USER_MODE] == GOD_USER) {
-                                        $downloads = 0;
-                                        foreach ($booklets as &$booklet) {
-                                            $downloads += $booklet[DB_ITEM_DOWNLOADS];
-                                        }
-
-                                        $answer = appendStatsToMessage($answer, $downloads);
-                                    }
-                                    /*array_unshift($keyboard[INLINE_KEYBOARD], array(
-                                array(
-                                TEXT_TAG => 'Linked List',
-                                CALLBACK_DATA => $data
-                                )
-                                ));*/
-                                } else {
-                                    $answer = 'مشکلی حین دریافت اطلاعات پیش آمد! لطفا لحظاتی بعد دوباره تلاش کنید.';
-                                    resetAction($user_id);
-                                }
-                            } else {
-                                if (setActionAndCache($user_id, ACTION_SELECT_BOOKLET_TO_EDIT, $user[DB_USER_ACTION])) {
-                                    $keyboard = createSessionsMenu($booklets, $categories['options'], false);
-                                } else {
-                                    $answer = 'مشکلی حین دریافت اطلاعات پیش آمد! لطفا لحظاتی بعد دوباره تلاش کنید.';
-                                    resetAction($user_id);
-                                }
-                            }
-                        } else {
-                            $answer = 'هنوز جزوه ای آپلود نشده!';
-                            resetAction($user_id);
-                        }
-                    }
-                } else {
-                    $answer = 'طبقه بندی جزوه ها بر اساس:';
-                    $keyboard = createClassifyByMenu($user_id, $categories);
-                }
-                break;
-        }
     } else if ($user[DB_USER_ACTION] == ACTION_SELECT_BOOKLET_TO_EDIT) {
         $edit_type = $user[DB_USER_CACHE];
         $booklets = Database::getInstance()->query('SELECT * FROM ' . DB_TABLE_BOOKLETS . ' WHERE ' . $data . ' LIMIT 1');
@@ -406,30 +439,6 @@ function handleCallbackQuery(&$update)
             // second menus: courses/teachers or yes/no menu for removing admins;
             // or no second menu (upload sample)
             switch ($params[0]) {
-                case DB_TABLE_COURSES:
-                    switch ($user[DB_USER_ACTION]) {
-
-                        default:
-                            $answer = 'از بین اساتید ارائه کننده این درس استاد مورد نظر خود را انتخاب کنید:';
-                            if ($user[DB_USER_ACTION] == ACTION_DOWNLOAD_BOOKLET) {
-                                $keyboard = createCategoricalMenu(DB_TABLE_TEACHERS, $data, DB_ITEM_COURSE_ID . "=$params[1]",
-                                    DB_ITEM_TEACHER_ID, $user[DB_USER_CACHE] ? ORDER_BY_MOST_DOWNLOADED_BOTH : ORDER_BY_NAME);
-                                if (($user[DB_USER_MODE] == ADMIN_USER || $user[DB_USER_MODE] == GOD_USER) && $keyboard) {
-                                    $answer = appendStatsToMessage($answer, getDownloadStatistics(null, $params[1]));
-                                }
-
-                            } else {
-                                $keyboard = createCategoricalMenu(DB_TABLE_TEACHERS, $data);
-                            }
-
-                            if (!$keyboard) //means there is no option to select because of filtering
-                            {
-                                $answer = 'موردی یافت نشد!';
-                            }
-
-                            break;
-                    }
-                    break;
                 case DB_TABLE_TEACHERS:
                     switch ($user[DB_USER_ACTION]) {
                         case ACTION_LINK_TEACHER:
@@ -456,7 +465,7 @@ function handleCallbackQuery(&$update)
                                 $keyboard = createCategoricalMenu(DB_TABLE_COURSES, $data, DB_ITEM_TEACHER_ID . "=$params[1]",
                                     DB_ITEM_COURSE_ID, $user[DB_USER_CACHE] ? ORDER_BY_MOST_DOWNLOADED_BOTH : ORDER_BY_NAME
                                 );
-                                if (($user[DB_USER_MODE] == ADMIN_USER || $user[DB_USER_MODE] == GOD_USER) && $keyboard) {
+                                if (isSuperior($user) && $keyboard) {
                                     $answer = appendStatsToMessage($answer, getDownloadStatistics($params[1]));
                                 }
 
