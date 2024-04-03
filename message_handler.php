@@ -354,7 +354,7 @@ function handleCasualMessage(&$update)
                                 if (isset($result['err'])) {
                                     $response = $result['err'];
                                 } else {
-                                    if (setActionAndCache($user_id, ACTION_SET_BOOKLET_CAPTION, $result['id'])) {
+                                    if (setActionAndCache($user_id, ACTION_SET_BOOKLET_CAPTION, json_encode($result))) {
                                         $response = 'جزوه مورد نظر با موفقیت ارسال شد. حالا کپشن جزوه را مشخص کنید:';
                                         $keyboard = array(
                                             INLINE_KEYBOARD => array(

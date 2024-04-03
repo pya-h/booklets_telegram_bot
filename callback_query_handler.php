@@ -36,19 +36,35 @@ function handleCallbackQuery(&$update)
             case IA_UPLOAD_BOOKLET:
                 if(($answer = validateCategoricalCallbackData($params)) !== null)
                     break;
+                if(!$state) {
+                    if($params['t'] !== 'cr' && $params['t'] !== 'tc')
+                        $answer = 'متاسفانه به دلیلی نامشخص فرایند آپلود در حالت اشتباهی اتظیم شده است. لطفا از دوباره تلاش کنند. اگر بازهم به این مشکل برخوردید با دولوپر در میان بگذارید.';
+                    else
+                        $keyboard = createCategoricalMenu(IA_UPLOAD_BOOKLET, null, $params, false);
 
-                switch($params['t']) {
-                    case 'cr':
-
-                        break;
-                    case 'tc':
-
-                        break;
-                    default:
-                        $answer = 'متاسفانه به دلیلی نامشخص فرایند آپلود در حالت اشتباهی اتظیم شده است. لطفا از دوباره تلاش کنند. اگر بازهم به این مشکل برخوردید با دولوپر در میان بگذارید.'
-                        break;
+                } else {
+                    // bot categories are selected:
+                    // the if below, sets user action and its cache to prepare for getting the booklet
+                    $selections = [$params, $state];
+                    $categories = extractCategories($selections);
+                    if (setActionAndCache($user_id, ACTION_SENDING_BOOKLET_FILE, json_encode($categories))) {
+                        $answer = 'جزوه مورد نظرت رو همراه با کپشن بفرست:';
+                        callMethod(METH_SEND_MESSAGE,
+                            CHAT_ID, $chat_id,
+                            MESSAGE_ID_TAG, $message_id,
+                            TEXT_TAG, $answer,
+                            KEYBOARD, backToMainMenuKeyboard()
+                        );
+                        callMethod('answerCallbackQuery',
+                            'callback_query_id', $callback_id,
+                            TEXT_TAG, 'فرایند آپلود جزوات این درس آغاز شد.',
+                            'show_alert', false
+                        );
+                        exit();
+                    }
+                    $answer = 'مشکلی حین ثبت اطلاعات پیش آمده. لطفا از اول تلاش کن :|';
+                    resetAction($user_id);
                 }
-                $keyboard = createCategoricalMenu(DB_TABLE_TEACHERS, $data);
                 break;
             case IA_UPLOAD_SAMPLE:
                 if(!isset($params['t']) || $params['t'] !== 'cr' || !isset($params['id']) || $params['id'] < 0) {
@@ -308,27 +324,6 @@ function handleCallbackQuery(&$update)
         resetAction($user_id);
     } else if (strpos($data, DATA_JOIN_SIGN) !== false) {
         switch ($user[DB_USER_ACTION]) {
-            case ACTION_UPLOAD_BOOKLET:
-                // the if below, sets user action and its cache to prepare for getting the booklet
-                if (setActionAndCache($user_id, ACTION_SENDING_BOOKLET_FILE, $data)) {
-                    $answer = 'جزوه مورد نظرت رو همراه با کپشن بفرست:';
-                    callMethod(METH_SEND_MESSAGE,
-                        CHAT_ID, $chat_id,
-                        MESSAGE_ID_TAG, $message_id,
-                        TEXT_TAG, $answer,
-                        KEYBOARD, backToMainMenuKeyboard()
-                    );
-                    callMethod('answerCallbackQuery',
-                        'callback_query_id', $callback_id,
-                        TEXT_TAG, 'فرایند آپلود جزوات این درس آغاز شد.',
-                        'show_alert', false
-                    );
-                    exit();
-                }
-                $answer = 'مشکلی حین ثبت اطلاعات پیش آمده. لطفا از اول تلاش کن :|';
-                resetAction($user_id);
-                break;
-
             case ACTION_DOWNLOAD_BOOKLET:
             case ACTION_EDIT_BOOKLET_CAPTION:
             case ACTION_EDIT_BOOKLET_FILE:

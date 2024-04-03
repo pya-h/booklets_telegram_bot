@@ -5,20 +5,20 @@ require_once __DIR__ . '/user.php';
 require_once __DIR__ . '/bot.php';
 
 
-function alignButtons(array &$items, string $related_column, string $data_prefix, string $callback_data_index=DB_ITEM_ID, string $other_related_column=null, $numbering=true): ?array
+function alignButtons(array &$items, string $caption_key, Closure $getData, string $data_key=DB_ITEM_ID, string $alternative_caption_key=null, $numbering=true): ?array
 {
     $buttons = array(array()); // an inline keyboard
     $current_row = 0;
     $column_length = 0;
     $no_valid_options = true;
     foreach($items as $count => &$item) {
-        if(isset($item[$callback_data_index]) || isset($item[$other_related_column])) {
+        if(isset($item[$data_key]) || isset($item[$alternative_caption_key])) {
             array_unshift($buttons[$current_row], array(
-                TEXT_TAG => ($numbering ? ($count+1) . ' ' : '') . ($item[$related_column] ?? $item[$other_related_column] ?? $item[$callback_data_index]),
-                CALLBACK_DATA => $data_prefix . ($item[$callback_data_index] ?? $item[DB_ITEM_ID])
+                TEXT_TAG => ($numbering ? ($count+1) . ' ' : '') . ($item[$caption_key] ?? $item[$alternative_caption_key] ?? $item[$data_key]),
+                CALLBACK_DATA => json_encode($getData($item[$data_key] ?? $item[DB_ITEM_ID]))
             ));
             // buttons callback_data is as: type/id, type determines whether it's a course or a teacher;
-            $column_length += strlen($item[$related_column]);
+            $column_length += strlen($item[$caption_key]);
             if($column_length > MAX_COLUMN_LENGTH) {
                 $column_length = 0;
                 $current_row++;
@@ -32,16 +32,18 @@ function alignButtons(array &$items, string $related_column, string $data_prefix
     return !$no_valid_options ? $buttons : null;
 }
 
-function createCategoricalMenu(string $table_name, ?string $previous_data = null, ?string $filter_query = null, ?string $filter_index = null, int $order_by=ORDER_BY_NAME): ?array
+function createCategoricalMenu(int $action, ?string $table_name, ?array $state, bool $filter_by_previous_category = true, int $order_by=ORDER_BY_NAME): ?array
 {
-    $query = 'SELECT ' . DB_ITEM_ID . ', ' . DB_ITEM_NAME . ' FROM ' . $table_name;
-    if(!$previous_data && $filter_query && !$filter_index) // this condition just happens for remove admin menu
-        $query .= ' WHERE ' . $filter_query;
-    if(!$order_by) {
-        // default order: alphabetic
-        $query .= ' ORDER BY ' . DB_ITEM_NAME;
+    if(!$table_name) {
+        $state['t'] = strtolower($state['t']);
+        $table_name = $state['t'] === 'cr' ? DB_TABLE_TEACHERS : DB_TABLE_COURSES;
     }
-    else if($table_name == DB_TABLE_COURSES || $table_name == DB_TABLE_TEACHERS) {
+
+    $query = 'SELECT ' . DB_ITEM_ID . ', ' . DB_ITEM_NAME . ' FROM ' . $table_name;
+
+    if(!$order_by) {
+        $query .= ' ORDER BY ' . DB_ITEM_NAME;
+    } else if($table_name == DB_TABLE_COURSES || $table_name == DB_TABLE_TEACHERS) {
         $qc = null;
         if($order_by != ORDER_BY_MOST_DOWNLOADED_BOTH) {
             $order_conditions = [
@@ -50,39 +52,45 @@ function createCategoricalMenu(string $table_name, ?string $previous_data = null
             ];
             $qc = $order_conditions[$order_by - 1];
         } else {
-            $params = explode(RELATED_DATA_SEPARATOR, $previous_data);
-            if(count($params) != 2)// sth is wrong
-                return null;
-            // this part is a little twisted, figure it out yourself, I don't feel explaining right now
-            
-            $query = "SELECT $table_name." . DB_ITEM_ID . ", $table_name." . DB_ITEM_NAME . ", $params[0]." . DB_ITEM_ID
-                . ' as xid FROM ' . DB_TABLE_TEACHERS . ', ' . DB_TABLE_COURSES . " WHERE $params[0]." . DB_ITEM_ID . "=$params[1]";
+            $selected_table = $table_name !== DB_TABLE_TEACHERS ? DB_TABLE_TEACHERS : DB_TABLE_COURSES;
+            $selected_id = $state['id'];
+            $query = "SELECT $table_name." . DB_ITEM_ID . ", $table_name." . DB_ITEM_NAME . ", $selected_table." . DB_ITEM_ID
+                . ' as xid FROM ' . DB_TABLE_TEACHERS . ', ' . DB_TABLE_COURSES . " WHERE $selected_table." . DB_ITEM_ID . "=$selected_id";
             $qc = DB_TABLE_BOOKLETS . '.' . DB_ITEM_TEACHER_ID . '=' . DB_TABLE_TEACHERS . '.' . DB_ITEM_ID
                 . ' AND ' . DB_TABLE_BOOKLETS . '.' . DB_ITEM_COURSE_ID . '=' . DB_TABLE_COURSES . '.' . DB_ITEM_ID;
         }
 
         $query .= ' ORDER BY (SELECT SUM(' . DB_TABLE_BOOKLETS . '.' . DB_ITEM_DOWNLOADS . ') FROM ' . DB_TABLE_BOOKLETS . " WHERE $qc) DESC";
-        // /*comment this*/    logText($query);
 
     }
 
     $items = Database::getInstance()->query($query);
-
-    $data_prefix = $table_name . RELATED_DATA_SEPARATOR;
-
-    // TODO: EDIT THIS SECTION TO USE ONLY SWL QUERIES
-    if($previous_data) {
-        $data_prefix = $previous_data . DATA_JOIN_SIGN . $data_prefix;
-
-        if($filter_query && $filter_index) {
-            $booklets = Database::getInstance()->query(
-                "SELECT $filter_index FROM " . DB_TABLE_BOOKLETS . " WHERE $filter_query", null, $filter_index);
-            $items = array_values(array_filter($items, function($item) use ($booklets) {
-                return in_array($item[DB_ITEM_ID], $booklets);
-            }));
+    // FIXME: EDIT THIS SECTION TO USE ONLY SWL QUERIES
+    if($filter_by_previous_category && $state !== null) {
+        $selected_category_item_id = $state['id'];
+        if($table_name !== DB_TABLE_COURSES) {
+            $selected_category_key = DB_ITEM_COURSE_ID;
+            $next_category_key = DB_ITEM_TEACHER_ID;
+        } else {
+            $selected_category_key = DB_ITEM_TEACHER_ID;
+            $next_category_key = DB_ITEM_COURSE_ID;
         }
+
+        $booklets = Database::getInstance()->query(
+            "SELECT $next_category_key FROM " . DB_TABLE_BOOKLETS . " WHERE $selected_category_key=:item_id", ['item_id' => $selected_category_item_id], $next_category_key);
+        $items = array_values(array_filter($items, function($item) use ($booklets) {
+            return in_array($item[DB_ITEM_ID], $booklets);
+        }));
     }
-    $options = alignButtons($items, DB_ITEM_NAME, $data_prefix);
+
+    $options = alignButtons($items, DB_ITEM_NAME, fn($id) => [
+        'a' => $action,
+        's' => $state,
+        'p' => [
+            't' => $table_name !== DB_TABLE_COURSES ? 'tc' : 'cr',
+            'id' => $id
+        ]
+    ]);
     return $options ? array(INLINE_KEYBOARD => $options) : null;
 }
 

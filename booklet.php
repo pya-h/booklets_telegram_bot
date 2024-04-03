@@ -34,10 +34,10 @@ function makeCategoryString($course_id, $teacher_id): string{
 }
 
 function addBooklet(&$user, array &$file): array {
-    $categories = extractCategories($user[DB_USER_CACHE]);
+    $categories = json_decode($user[DB_USER_CACHE], true);
 
     if(isset($categories['err']))
-        return array('id' => null, 'err' => $categories['err']);
+        return array(DB_ITEM_ID => null, 'err' => $categories['err']);
     $err = null; $item_id = null;
     if(isset($file[FILE_ID]) && isset($file['tag'])) {
         // now its ready for insertion
@@ -53,31 +53,34 @@ function addBooklet(&$user, array &$file): array {
         if(!$item_id || !resetAction($user[DB_ITEM_ID]))
             $err = 'مشکلی حین ثبت جزوه پیش اومد. لطفا دوباره تلاش کن!';
     } else $err = 'فایل موردنظر به درستی توسط ربات دریافت نشده است. لطفا دوباره تلاش کنید!';
-    return array('id' => $item_id, 'err' => $err);
+    $categories[DB_ITEM_ID] = $item_id;
+    $categories['err'] = $err;
+    return $categories;
 }
 
 function backupBooklet(&$user, ?string $new_caption = null): ?string
 {
     $db = Database::getInstance();
     $err = '';
+    $booklet_data = json_decode($user[DB_USER_CACHE], true);
+
     if($new_caption) {
         $identifiers = extractBookletIndexAndCaption($new_caption);
         if (
             !$db->update('UPDATE ' . DB_TABLE_BOOKLETS . ' SET ' . DB_BOOKLETS_CAPTION . '=:caption, ' . DB_BOOKLETS_INDEX . '=:index WHERE ' . DB_ITEM_ID . '=:id',
-                array('id' => $user[DB_USER_CACHE], 'caption' => $identifiers[1], 'index' => $identifiers[0]))
+                array('id' => $booklet_data[DB_ITEM_ID], 'caption' => $identifiers[1], 'index' => $identifiers[0]))
         )
             $err .= 'تغییر کپشن ناموفق بود!';
 
     }
     $booklet = $db->query(
         'SELECT * FROM '. DB_TABLE_BOOKLETS .' WHERE ' . DB_ITEM_ID  . '=:id LIMIT 1', array(
-            'id' => $user[DB_USER_CACHE]
+            'id' => $booklet_data[DB_ITEM_ID]
         )
     );
     if(isset($booklet[0])) {
         // save current booklet's teacher id and course id, for next upload
-        setActionAndCache($user[DB_ITEM_ID], ACTION_SENDING_BOOKLET_FILE,
-                makeCategoryString($booklet[0][DB_ITEM_COURSE_ID], $booklet[0][DB_ITEM_TEACHER_ID]));
+        updateAction($user[DB_ITEM_ID], ACTION_SENDING_BOOKLET_FILE);
         // send to channel
         callMethod(
             'send' . ucfirst($booklet[0][DB_ITEM_FILE_TYPE]),
