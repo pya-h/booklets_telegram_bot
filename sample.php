@@ -5,6 +5,12 @@ require_once __DIR__ . '/bot.php';
 function addSample(&$user, array &$file): array {
     if(!isset($user[DB_USER_CACHE]))
         return array('id' => null, 'err' => 'درس مربوطه به درستی انتخاب نشده است! دوباره تلاش کنید...');
+    
+    $categories = json_decode($user[DB_USER_CACHE], true);
+    if (isset($categories['err'])) {
+        return array(DB_ITEM_ID => null, 'err' => $categories['err']);
+    }
+    
     $err = null; $item_id = null;
     if(isset($file[FILE_ID]) && isset($file['tag'])) {
         // now It's ready for insertion
@@ -12,12 +18,16 @@ function addSample(&$user, array &$file): array {
 
         $item_id = Database::getInstance()->insert(
             'INSERT INTO ' . DB_TABLE_SAMPLES . " ($fields) " . ' VALUES (:course_id, :file_id, :title, :type)',
-                array('course_id' => $user[DB_USER_CACHE], 'file_id' => $file[FILE_ID], 'title' => !empty($file[CAPTION_TAG]) ? $file[CAPTION_TAG] : 'بدون عنوان', 'type' => $file['tag'])
+                array('course_id' => $categories[DB_ITEM_COURSE_ID], 'file_id' => $file[FILE_ID], 'title' => !empty($file[CAPTION_TAG]) ? $file[CAPTION_TAG] : 'بدون عنوان', 'type' => $file['tag'])
         );
         if(!$item_id || !resetAction($user[DB_ITEM_ID]))
             $err = 'مشکلی حین ثبت نمونه سوال پیش اومد. لطفا دوباره تلاش کن!';
     } else $err = 'فایل موردنظر به درستی توسط ربات دریافت نشده است. لطفا دوباره تلاش کنید!';
-    return array('id' => $item_id, 'err' => $err);
+
+    $categories[DB_ITEM_ID] = $item_id;
+    $categories['err'] = $err;
+
+    return $categories;
 }
 
 function backupSample($sample_id, ?string $new_title = null): ?string

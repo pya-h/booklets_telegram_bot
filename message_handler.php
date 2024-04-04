@@ -71,8 +71,8 @@ function handleCasualMessage(&$update)
                                     array(
                                         array(TEXT_TAG => 'مشاهده',
                                             CALLBACK_DATA => DB_TABLE_MESSAGES . RELATED_DATA_SEPARATOR . 'sh'
-                                                . RELATED_DATA_SEPARATOR . $message_id . RELATED_DATA_SEPARATOR . $chat_id
-                                                . RELATED_DATA_SEPARATOR . $msg[DB_ITEM_ID],
+                                            . RELATED_DATA_SEPARATOR . $message_id . RELATED_DATA_SEPARATOR . $chat_id
+                                            . RELATED_DATA_SEPARATOR . $msg[DB_ITEM_ID],
                                         ),
                                     ),
                                 ),
@@ -344,33 +344,56 @@ function handleCasualMessage(&$update)
                     }
                 } else {
                     switch ($user[DB_USER_ACTION]) {
-                        case ACTION_SENDING_BOOKLET_FILE:
+                        case ACTION_SENDING_BOOKLET_FILE: // TODO: combine case with ACTION_SENDING_SAMPLE_FILE
                             $file = getFileFrom($message);
                             $keyboard = backToMainMenuKeyboard();
                             if (!$file) {
                                 $response = 'هیچ فایلی ارسال نشده. دوباره ارسال کنید!';
-                            } else {
-                                $result = addBooklet($user, $file);
-                                if (isset($result['err'])) {
-                                    $response = $result['err'];
-                                } else {
-                                    if (setActionAndCache($user_id, ACTION_SET_BOOKLET_CAPTION, json_encode($result))) {
-                                        $response = 'جزوه مورد نظر با موفقیت ارسال شد. حالا کپشن جزوه را مشخص کنید:';
-                                        $keyboard = array(
-                                            INLINE_KEYBOARD => array(
-                                                array(
-                                                    //columns:
-                                                    array(TEXT_TAG => 'کپشن فایل', CALLBACK_DATA => 0),
-                                                    array(TEXT_TAG => 'وارد کردن کپشن', CALLBACK_DATA => 1),
-                                                ),
-                                            ),
-                                        );
-                                    } else {
-                                        $response = 'جزوه ثبت شد ولی مشکلی حین ورود به حالت تعیین کپشن پیش آمد!';
-                                    }
-
-                                }
+                                break;
                             }
+
+                            $result = addBooklet($user, $file);
+                            if (isset($result['err'])) {
+                                $response = $result['err'];
+                                break;
+                            }
+                            if (setActionAndCache($user_id, ACTION_SET_BOOKLET_CAPTION, json_encode($result))) {
+                                $response = 'جزوه مورد نظر با موفقیت ارسال شد. حالا کپشن جزوه را مشخص کنید:';
+                                $keyboard = array(
+                                    INLINE_KEYBOARD => array(
+                                        array(
+                                            //columns:
+                                            array(TEXT_TAG => 'کپشن فایل', CALLBACK_DATA => 0), // FIXME: callbackdata
+                                            array(TEXT_TAG => 'وارد کردن کپشن', CALLBACK_DATA => 1),
+                                        ),
+                                    ),
+                                );
+                            } else {
+                                $response = 'جزوه ثبت شد ولی مشکلی حین ورود به حالت تعیین کپشن پیش آمد!';
+                            }
+
+                            break;
+                        case ACTION_SENDING_SAMPLE_FILE: // TODO: combine case with ACTION_SENDING_BOOKLET_FILE
+                            $file = getFileFrom($message);
+                            $keyboard = backToMainMenuKeyboard();
+                            if (!$file) {
+                                $response = 'هیچ فایلی ارسال نشده. دوباره ارسال کنید!';
+                                break;
+                            }
+
+                            $result = addSample($user, $file);
+                            if (isset($result['err'])) {
+                                $response = $result['err'];
+                                break;
+                            }
+
+                            if (setActionAndCache($user_id, ACTION_SET_SAMPLE_TITLE, json_encode($result))) {
+                                $response = 'نمونه سوال مورد نظر با موفقیت ارسال شد. حالا عنوان آن را تایپ کنید:';
+                                $keyboard = array(INLINE_KEYBOARD => array(array(array(TEXT_TAG => 'استفاده از کپشن فایل', CALLBACK_DATA => 0)))); // FIXME: callbackdata
+                            } else {
+                                $response = 'نمونه سوال ثبت شد ولی مشکلی حین ورود به حالت تعیین عنوان پیش آمد!';
+                            }
+
                             break;
                         case ACTION_SET_BOOKLET_CAPTION:
                             $response = backupBooklet($user, $data);
@@ -379,26 +402,6 @@ function handleCasualMessage(&$update)
                                 $keyboard = backToMainMenuKeyboard();
                             } else {
                                 resetAction($user_id);
-                            }
-                            break;
-                        case ACTION_SENDING_SAMPLE_FILE:
-                            $file = getFileFrom($message);
-                            $keyboard = backToMainMenuKeyboard();
-                            if (!$file) {
-                                $response = 'هیچ فایلی ارسال نشده. دوباره ارسال کنید!';
-                            } else {
-                                $result = addSample($user, $file);
-                                if (isset($result['err'])) {
-                                    $response = $result['err'];
-                                } else {
-                                    if (setActionAndCache($user_id, ACTION_SET_SAMPLE_TITLE, $user[DB_USER_CACHE] . RELATED_DATA_SEPARATOR . $result['id'])) {
-                                        $response = 'نمونه سوال مورد نظر با موفقیت ارسال شد. حالا عنوان آن را تایپ کنید:';
-                                        $keyboard = array(INLINE_KEYBOARD => array(array(array(TEXT_TAG => 'استفاده از کپشن فایل', CALLBACK_DATA => 0))));
-                                    } else {
-                                        $response = 'نمونه سوال ثبت شد ولی مشکلی حین ورود به حالت تعیین عنوان پیش آمد!';
-                                    }
-
-                                }
                             }
                             break;
                         case ACTION_SET_SAMPLE_TITLE:
@@ -465,12 +468,12 @@ function handleCasualMessage(&$update)
                         case ACTION_ADD_COURSE:
                             $result = addCategory(DB_TABLE_COURSES, $data, $user_id);
                             $response = $result ? "درس جدید با ایدی $result موفقیت ثبت شد!"
-                                : "خطایی هنگام ثبت بوجود آمد. لطفا دوباره نام رو وارد کنید.";
+                            : "خطایی هنگام ثبت بوجود آمد. لطفا دوباره نام رو وارد کنید.";
                             break;
                         case ACTION_ADD_TEACHER:
                             $result = addCategory(DB_TABLE_TEACHERS, $data, $user_id);
                             $response = $result ? "استاد جدید با ایدی $result موفقیت ثبت شد!"
-                                : "خطایی هنگام ثبت بوجود آمد. لطفا دوباره نام رو وارد کنید.";
+                            : "خطایی هنگام ثبت بوجود آمد. لطفا دوباره نام رو وارد کنید.";
                             break;
                         case ACTION_LINK_TEACHER:
                             if ($user[DB_USER_CACHE]) {
@@ -484,7 +487,7 @@ function handleCasualMessage(&$update)
                             // set message text as the name for the admin
                             // cache is the target user id
                             $response = updateUserField($user[DB_USER_CACHE], $data) ? 'اسم کاربر با موفقیت ثبت شد.'
-                                : 'مشکلی در ثبت اسم کاربر پیش آمد!';
+                            : 'مشکلی در ثبت اسم کاربر پیش آمد!';
                             resetAction($user_id);
                             break;
 
@@ -564,7 +567,7 @@ function handleCasualMessage(&$update)
                     $response = startUpgradingUser($user_id, $message, TA_USER, 'حل تمرین شما', $user[DB_USER_CACHE]);
                 } else if ($user[DB_USER_ACTION] == ACTION_ASSIGN_USER_NAME) {
                     $response = updateUserField($user[DB_USER_CACHE], $data) ? "$data به عنوان حل تمرین شما ثبت شد. "
-                        : 'مشکلی در ثبت اسم کاربر پیش آمد!';
+                    : 'مشکلی در ثبت اسم کاربر پیش آمد!';
                     resetAction($user_id);
                 } else {
                     switch ($data) {
