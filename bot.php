@@ -47,10 +47,19 @@ function extractFromSentMessage(string &$telegram_response, string $field = MESS
     return $channel_response['result'][$field] ?? null;
 }
 
-function jsonifyData(string $action, ?array $params, ?array $state_data = null): string
+function createCallbackData(string $action, ?array $params, ?array $state = null, $extra = null): array {
+    $data = ["a" => $action, "p" => $params];
+    if($state)
+        $data['s'] = $state;
+    if($extra)
+        $data['x'] = $extra;
+    return $data;
+}
+
+function jsonifyData(string $action, ?array $params, ?array $state = null, $extra = null): string
 {
     return json_encode(
-        ["a" => $action, "p" => $params, "s" => $state_data]
+        createCallbackData($action, $params, $state, $extra)
     );
 }
 
