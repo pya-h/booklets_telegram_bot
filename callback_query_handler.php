@@ -40,9 +40,9 @@ function handleCallbackQuery(&$update)
             case IA_LIST_BOOKLETS:
                 if (!$state) {
                     // TODO: Create the first menu in message_handler.php
-                    if (($answer = validateCategoricalCallbackData($params)) !== null) {
+                    if (($answer = validateCategoricalCallbackData($params)) !== null)
                         break;
-                    }
+
 
                     if ($params['t'] !== 'cr' && $params['t'] !== 'tc') {
                         $answer = 'متاسفانه به دلیلی نامشخص فرایند دانلود در حالت اشتباهی تنظیم شده است. لطفا از دوباره تلاش کنند. اگر بازهم به این مشکل برخوردید با دولوپر در میان بگذارید.';
@@ -60,9 +60,9 @@ function handleCallbackQuery(&$update)
                         $extra
                     );
 
-                    if (isSuperior($user) && $keyboard) {
+                    if (isSuperior($user) && $keyboard)
                         $answer = appendStatsToMessage($answer, getDownloadStatistics(null, $params[1]));
-                    }
+
 
                     break;
                 } else {
@@ -100,9 +100,9 @@ function handleCallbackQuery(&$update)
 
             case IA_GET_BOOKLET:
             case IA_GET_SAMPLE:
-                if (($answer = validateCategoricalCallbackData($params)) !== null) {
+                if (($answer = validateCategoricalCallbackData($params)) !== null)
                     break;
-                }
+
 
                 $downloads = 0;
                 $selections = $params;
@@ -141,16 +141,16 @@ function handleCallbackQuery(&$update)
                         );
                     }
                 }
-                if (isSuperior($user)) {
+                if (isSuperior($user))
                     $answer = appendStatsToMessage($answer, $downloads);
-                }
+
 
                 resetAction($user_id);
                 break;
             case IA_LIST_FAVORITES:
-                if (($answer = validateInlineData($params, 'fav')) !== null) {
+                if (($answer = validateInlineData($params, 'fav')) !== null)
                     break;
-                }
+
 
                 $favs = getFavoritesList($user_id);
                 $fav_id = $params['fav'];
@@ -179,9 +179,9 @@ function handleCallbackQuery(&$update)
                 }
 
                 if (!$state) {
-                    if ($params['t'] !== 'cr' && $params['t'] !== 'tc') {
+                    if ($params['t'] !== 'cr' && $params['t'] !== 'tc')
                         $answer = 'متاسفانه به دلیلی نامشخص فرایند آپلود در حالت اشتباهی اتظیم شده است. لطفا از دوباره تلاش کنند. اگر بازهم به این مشکل برخوردید با دولوپر در میان بگذارید.';
-                    } else {
+                    else {
                         $keyboard = createCategoricalMenu(IA_UPLOAD_BOOKLET, null, $params, $action !== IA_UPLOAD_BOOKLET);
                         $answer = $params['t'] === 'cr' ? 'از بین اساتید ارائه کننده این درس استاد مورد نظر خود را انتخاب کنید:'
                             : 'از بین درس های ارایه شده توسط استاد یکی را انتخاب کنید:';
@@ -264,9 +264,8 @@ function handleCallbackQuery(&$update)
                 }
                 break;
             case IA_SET_CAPTION:
-                if (($answer = validateCategoricalCallbackData($params)) !== null) {
+                if (($answer = validateCategoricalCallbackData($params)) !== null)
                     break;
-                }
                 $use_file_caption = $params['def'] ?? false;
                 $is_booklet = $params['t'] === 'bk';
                 $file_category_name = $is_booklet ? 'جزوه' : 'نمونه سوال';
@@ -293,8 +292,6 @@ function handleCallbackQuery(&$update)
                 } else {
                     $answer = 'کپشن موردنظرتو وارد کن:';
                 }
-
-                resetAction($user_id);
                 break;
             case IA_UPLOAD_SAMPLE:
                 // TODO: Create the first menu in message_handler.php
@@ -424,28 +421,24 @@ function handleCallbackQuery(&$update)
                 }
                 exit();
 
-            case IA_DOWNGRADE_USER:
+            case IA_DOWNGRADE_ADMIN:
                 // TODO: Check What piece of codes are using this? Is teacher downgrading TA, or admin downgrading teacher with this?
-                if ($user[DB_USER_MODE] == GOD_USER || $user[DB_USER_MODE] == ADMIN_USER) {
-                    if (($answer = validateInlineData($params, 'admin')) !== null) {
+                if (isSuperior($user)) {
+                    if (($answer = validateInlineData($params, 'u')) !== null)
                         break;
-                    }
 
-                    if (downgradeUser($params['admin'])) {
+                    if (downgradeUser($params['u']))
                         $answer = 'کاربر موردنظر به دسترسی عادی بازگشت!';
-                    } else {
+                    else
                         $answer = 'مشکلی حین تغییر کاربری پیش آمد. لطفا دوباره تلاش کن!';
-                    }
                 } else {
                     $answer = 'شما مجوز انجام چنین کاری را ندارید!';
                 }
-                resetAction($user_id);
                 break;
 
             case IA_CONTACT_TEACHER:
-                if (($answer = validateInlineData($params, 'tc')) !== null) {
+                if (($answer = validateInlineData($params, 'tc')) !== null)
                     break;
-                }
 
                 if (setActionAndCache($user_id, ACTION_WRITE_MESSAGE, $params['tc'])) {
                     $answer = 'متن خود را در قالب یک پیام ارسال کنید.📝';
@@ -507,19 +500,21 @@ function handleCallbackQuery(&$update)
                 break;
 
             case IA_REMOVE_TA:
-                if (($answer = validateInlineData($params, 't', 'id')) !== null) {
+                if (($answer = validateInlineData($params, 't', 'id')) !== null)
                     break;
-                } else if ($params['t'] !== 'u') {
+                else if ($params['t'] !== 'u') {
                     $answer = 'مشکلی در روند حذف TA موردنظر پیش آمد. لطفا دوباره تلاش کنید و در صورت مواجهه مجدد با این پیام مشکل را با واحد پشتیبانی در میان بگذارید.';
                     break;
                 }
 
                 $target_user = getUser($params['id']); // the user that is removing from TA list.
-                
-                if (downgradeUser($params['admin'])) {
-                    $answer = 'کاربر موردنظر به دسترسی عادی بازگشت!';
-                } else {
-                    $answer = 'مشکلی حین تغییر کاربری پیش آمد. لطفا دوباره تلاش کن!';
+                if (($user[DB_USER_MODE] == TEACHER_USER && $user[DB_ITEM_TEACHER_ID] === $target_user[DB_ITEM_TEACHER_ID])
+                    || isSuperior($user)
+                ) {
+                    if (downgradeUser($params['u']))
+                        $answer = 'کاربر انتخابی شما از لیست اساتید حل تمرین شما حذف شد.';
+                    else
+                        $answer = 'مشکلی حین تغییر کاربری پیش آمد. لطفا دوباره تلاش کنید!';
                 }
                 break;
             default:

@@ -245,7 +245,7 @@ function handleCasualMessage(&$update)
                     break;
                 } else if ($data === CMD_REMOVE_ADMIN) {
                     if (updateAction($user_id, ACTION_DOWNGRADE_USER)) {
-                        $keyboard = createUsersMenu(DB_USER_MODE . '=' . ADMIN_USER);
+                        $keyboard = createUsersMenu(IA_DOWNGRADE_ADMIN, DB_USER_MODE . '=' . ADMIN_USER);
                         if ($keyboard) {
                             $response = 'روی شخص موردنظرت کلیک کن تا از حالت ادمین خارج شود:';
                         } else {
@@ -365,15 +365,15 @@ function handleCasualMessage(&$update)
                             }
                             if (setActionAndCache($user_id, ACTION_SET_BOOKLET_CAPTION, json_encode($result))) {
                                 $response = 'جزوه مورد نظر با موفقیت ارسال شد. حالا کپشن جزوه را مشخص کنید:';
-                                $keyboard = array(
-                                    INLINE_KEYBOARD => array(
-                                        array(
+                                $keyboard = [
+                                    INLINE_KEYBOARD => [
+                                        [
                                             //columns:
-                                            array(TEXT_TAG => 'کپشن فایل', CALLBACK_DATA => 0), // FIXME: callbackdata
-                                            array(TEXT_TAG => 'وارد کردن کپشن', CALLBACK_DATA => 1),
-                                        ),
-                                    ),
-                                );
+                                            [TEXT_TAG => 'کپشن فایل', CALLBACK_DATA => jsonifyData(IA_SET_CAPTION, ['t' => 'bk', 'def' => true])],
+                                            [TEXT_TAG => 'وارد کردن کپشن', CALLBACK_DATA => jsonifyData(IA_SET_CAPTION, ['t' => 'bk', 'def' => false])],
+                                        ],
+                                    ],
+                                ];
                             } else {
                                 $response = 'جزوه ثبت شد ولی مشکلی حین ورود به حالت تعیین کپشن پیش آمد!';
                             }
@@ -395,7 +395,15 @@ function handleCasualMessage(&$update)
 
                             if (setActionAndCache($user_id, ACTION_SET_SAMPLE_TITLE, json_encode($result))) {
                                 $response = 'نمونه سوال مورد نظر با موفقیت ارسال شد. حالا عنوان آن را تایپ کنید:';
-                                $keyboard = array(INLINE_KEYBOARD => array(array(array(TEXT_TAG => 'استفاده از کپشن فایل', CALLBACK_DATA => 0)))); // FIXME: callbackdata
+                                $keyboard = [
+                                    INLINE_KEYBOARD => [
+                                        [
+                                            //columns:
+                                            [TEXT_TAG => 'کپشن فایل', CALLBACK_DATA => jsonifyData(IA_SET_CAPTION, ['t' => 'sm', 'def' => true])],
+                                            [TEXT_TAG => 'وارد کردن کپشن', CALLBACK_DATA => jsonifyData(IA_SET_CAPTION, ['t' => 'sm', 'def' => false])],
+                                        ],
+                                    ],
+                                ];
                             } else {
                                 $response = 'نمونه سوال ثبت شد ولی مشکلی حین ورود به حالت تعیین عنوان پیش آمد!';
                             }

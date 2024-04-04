@@ -41,7 +41,7 @@ defined('IA_REPLY_MESSAGE') or define('IA_REPLY_MESSAGE', 2);
 defined('IA_LIST_FAVORITES') or define('IA_LIST_FAVORITES', 3);
 defined('IA_GET_BOOKLET') or define('IA_GET_BOOKLET', 4);
 defined('IA_GET_SAMPLE') or define('IA_GET_SAMPLE', 5);
-defined('IA_DOWNGRADE_USER') or define('IA_DOWNGRADE_USER', 6);
+defined('IA_DOWNGRADE_ADMIN') or define('IA_DOWNGRADE_ADMIN', 6);
 defined('IA_REMOVE_TA') or define('IA_REMOVE_TA', 7);
 defined('IA_CONTACT_TEACHER') or define('IA_CONTACT_TEACHER', 8);
 defined('IA_LIST_SAMPLES') or define('IA_LIST_SAMPLES', 9);
