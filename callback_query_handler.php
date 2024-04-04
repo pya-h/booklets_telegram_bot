@@ -39,10 +39,8 @@ function handleCallbackQuery(&$update)
         switch ($action) {
             case IA_LIST_BOOKLETS:
                 if (!$state) {
-                    // TODO: Create the first menu in message_handler.php
                     if (($answer = validateCategoricalCallbackData($params)) !== null)
                         break;
-
 
                     if ($params['t'] !== 'cr' && $params['t'] !== 'tc') {
                         $answer = 'متاسفانه به دلیلی نامشخص فرایند دانلود در حالت اشتباهی تنظیم شده است. لطفا از دوباره تلاش کنند. اگر بازهم به این مشکل برخوردید با دولوپر در میان بگذارید.';
@@ -102,8 +100,6 @@ function handleCallbackQuery(&$update)
             case IA_GET_SAMPLE:
                 if (($answer = validateCategoricalCallbackData($params)) !== null)
                     break;
-
-
                 $downloads = 0;
                 $selections = $params;
                 $choice = $selections['id'];
@@ -168,7 +164,6 @@ function handleCallbackQuery(&$update)
             case IA_UPLOAD_BOOKLET:
             case IA_EDIT_BOOKLET_CAPTION:
             case IA_EDIT_BOOKLET_FILE:
-                // TODO: Create the first menu in message_handler.php
                 if (!isSuperior($user)) {
                     $answer = 'شما اجازه انجام چنین کاری را ندارید!';
                     break;
@@ -323,7 +318,7 @@ function handleCallbackQuery(&$update)
                     // if there is some booklets
                     $answer = 'نمونه سوال موردنظر خود را از لیست زیر انتخاب کن:';
                     if (updateAction($user_id, ACTION_SELECT_SAMPLE_TO_GET)) {
-                        $keyboard = createSamplesMenu($samples);
+                        $keyboard = createSamplesMenu(IA_GET_SAMPLE, $samples);
                         if (isSuperior($user)) {
                             $downloads = 0;
                             foreach ($samples as &$sample) {
@@ -343,9 +338,9 @@ function handleCallbackQuery(&$update)
                 break;
 
             case IA_SHOW_MESSAGE:
-                // user wants to see admin message
+                // user wants to see fc message
                 // if data is invalid: show the validation error message
-                if (($answer = validateInlineData($params, 'msg', 'admin', 'rpm')) !== null) {
+                if (($answer = validateInlineData($params, 'msg', 'fc', 'r2m')) !== null) {
                     callMethod(
                         'answerCallbackQuery',
                         'callback_query_id',
@@ -363,9 +358,9 @@ function handleCallbackQuery(&$update)
                         CHAT_ID,
                         $chat_id,
                         'from_chat_id',
-                        $params['admin'],
+                        $params['fc'],
                         'reply_to_message_id',
-                        $params['rpm']
+                        $params['r2m']
                     );
                     callMethod(
                         METH_DELETE_MESSAGE,

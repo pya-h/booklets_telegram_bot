@@ -137,7 +137,7 @@ function createSessionsMenu(int $action, array &$booklets, array $categories, bo
     return array(INLINE_KEYBOARD => $options);
 }
 
-function createSamplesMenu(array &$samples, bool $all_items_option = true): ?array
+function createSamplesMenu(int $action, array &$samples, bool $all_items_option = true): ?array
 {
     $options = alignButtons($samples, DB_ITEM_NAME, DB_TABLE_SAMPLES . '.' . DB_ITEM_ID . '=', DB_ITEM_ID);
     if (!$options) return null;

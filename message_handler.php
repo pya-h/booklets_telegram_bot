@@ -49,12 +49,11 @@ function handleCasualMessage(&$update)
                             TEXT_TAG,
                             'برای پاسخ به پیام بالا میتونی از گزینه زیر استفاده کنید',
                             KEYBOARD,
-                            array(
-                                INLINE_KEYBOARD => array(
-                                    array(array(TEXT_TAG => 'پاسخ', CALLBACK_DATA => DB_TABLE_MESSAGES . RELATED_DATA_SEPARATOR
-                                        . 'rp' . RELATED_DATA_SEPARATOR . $message_id)),
-                                ),
-                            )
+                            [
+                                INLINE_KEYBOARD => [
+                                    [[TEXT_TAG => 'پاسخ', CALLBACK_DATA => jsonifyData(IA_REPLY_MESSAGE, ['msg' => $message_id])]],
+                                ],
+                            ]
                         );
                     }
                     $response = "پیام شما با موفقیت ارسال شد✅ \n در صورت لزوم، $group_name پاسخ را از طریق همین بات به شما اعلام خواهد کرد.";
@@ -78,18 +77,16 @@ function handleCasualMessage(&$update)
                             'reply_to_message_id',
                             $msg[DB_ITEM_ID],
                             KEYBOARD,
-                            array(
-                                INLINE_KEYBOARD => array(
-                                    array(
-                                        array(
+                            [
+                                INLINE_KEYBOARD => [
+                                    [
+                                        [
                                             TEXT_TAG => 'مشاهده',
-                                            CALLBACK_DATA => DB_TABLE_MESSAGES . RELATED_DATA_SEPARATOR . 'sh'
-                                                . RELATED_DATA_SEPARATOR . $message_id . RELATED_DATA_SEPARATOR . $chat_id
-                                                . RELATED_DATA_SEPARATOR . $msg[DB_ITEM_ID],
-                                        ),
-                                    ),
-                                ),
-                            )
+                                            CALLBACK_DATA => jsonifyData(IA_SHOW_MESSAGE, ['msg' => $message_id, 'fc' => $chat_id, 'r2m' => $msg[DB_ITEM_ID]]),
+                                        ],
+                                    ],
+                                ],
+                            ]
                         );
                         markMessageAsAnswered($user[DB_USER_CACHE]);
                         $response = 'پاسخ شما با موفقیت ارسال شد.';
@@ -103,9 +100,12 @@ function handleCasualMessage(&$update)
                     if (count($params) === 3) {
                         if (updateAction($user_id, ACTION_DOWNLOAD_BOOKLET, true)) {
                             $response = 'طبقه بندی جزوه ها بر اساس:';
-                            $categories = array(DB_ITEM_TEACHER_ID => $params[1], DB_ITEM_COURSE_ID => $params[2]);
-                            $data = createCallbackData(IA_LIST_BOOKLETS, ['t' => 'tc', 'id' => $params[1]], ['t' => 'cr', 'id' => $params[2]]);
-                            $keyboard = createClassifyByMenu($user_id, $categories, $data);
+                            $categories = [DB_ITEM_TEACHER_ID => $params[1], DB_ITEM_COURSE_ID => $params[2]];
+                            $keyboard = createClassifyByMenu(
+                                $user_id,
+                                $categories,
+                                createCallbackData(IA_LIST_BOOKLETS, ['t' => 'tc', 'id' => $params[1]], ['t' => 'cr', 'id' => $params[2]])
+                            );
                         } else {
                             $response = 'مشکلی حین اجرای دستور موردنظر پیش آمد! لطفا لحظاتی دیگر دوباره تلاش کتید.';
                         }
@@ -201,9 +201,9 @@ function handleCasualMessage(&$update)
                 $keyboard = createCategoricalMenu(IA_SELECT_TEACHER_OPTIONS, DB_TABLE_TEACHERS, null, false, ORDER_BY_NAME, fn ($id) => [
                     'a' => IA_SELECT_TEACHER_OPTIONS,
                     'p' => [
-                        'op' =>  'bio',
-                        'id' => $id
-                    ]
+                        'op' => 'bio',
+                        'id' => $id,
+                    ],
                 ]);
                 break;
                 break;
@@ -264,7 +264,7 @@ function handleCasualMessage(&$update)
                         case CMD_UPLOAD:
                             $keyboard = array(
                                 'resize_keyboard' => true, 'one_time_keyboard' => false,
-                                'keyboard' => [[CMD_UPLOAD_SAMPLE, CMD_UPLOAD_BOOKLET]]
+                                'keyboard' => [[CMD_UPLOAD_SAMPLE, CMD_UPLOAD_BOOKLET]],
                             );
                             $response = 'چه چیزی میخواهید آپلود کنید؟';
                             break;
@@ -274,7 +274,7 @@ function handleCasualMessage(&$update)
                             $response = 'از لیست زیر درس موردنظر خود را انتخاب کنید:';
                             $keyboard = createCategoricalMenu([
                                 CMD_UPLOAD_BOOKLET => IA_UPLOAD_BOOKLET,
-                                CMD_EDIT_BOOKLET_FILE => IA_EDIT_BOOKLET_FILE, CMD_EDIT_BOOKLET_CAPTION => IA_EDIT_BOOKLET_CAPTION
+                                CMD_EDIT_BOOKLET_FILE => IA_EDIT_BOOKLET_FILE, CMD_EDIT_BOOKLET_CAPTION => IA_EDIT_BOOKLET_CAPTION,
                             ][$data], DB_TABLE_COURSES);
                             break;
                         case CMD_UPLOAD_SAMPLE:
@@ -324,9 +324,9 @@ function handleCasualMessage(&$update)
                             $keyboard = createCategoricalMenu(IA_SELECT_TEACHER_OPTIONS, DB_TABLE_TEACHERS, null, false, ORDER_BY_NAME, fn ($id) => [
                                 'a' => IA_SELECT_TEACHER_OPTIONS,
                                 'p' => [
-                                    'op' =>  $data !== CMD_TEACHER_INTRODUCTION ? 'link' : 'int',
-                                    'id' => $id
-                                ]
+                                    'op' => $data !== CMD_TEACHER_INTRODUCTION ? 'link' : 'int',
+                                    'id' => $id,
+                                ],
                             ]);
                             break;
                         case CMD_NOTIFICATION:
