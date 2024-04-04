@@ -204,10 +204,10 @@ function getDownloadOptions(): array
 function createLinkedList(array $booklets = array(), $page = 0): string
 {
     $list = '';
-    $end = ($page + 1) * MAX_LINKED_LIST_LENGTH;
+    $end = ($page + 1) * LINKED_LIST_PAGE_LENGTH;
     if (!isset($booklets[$end - 1]))
         $end = count($booklets);
-    for ($i = $page * MAX_LINKED_LIST_LENGTH; $i < $end; $i++) {
+    for ($i = $page * LINKED_LIST_PAGE_LENGTH; $i < $end; $i++) {
         $list .= ($i + 1) . '. ' . $booklets[$i]['teacher'] . ' - ' . $booklets[$i]['course'] . "\t"
             . CMD_GET_BOOKLET_PREFIX . CMD_COMMAND_PARAM_SEPARATOR . $booklets[$i][DB_ITEM_TEACHER_ID]
             . CMD_COMMAND_PARAM_SEPARATOR . $booklets[$i][DB_ITEM_COURSE_ID];

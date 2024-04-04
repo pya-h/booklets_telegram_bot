@@ -197,29 +197,27 @@ function handleCasualMessage(&$update)
                 }
                 break;
             case CMD_TEACHER_BIOS:
-                if (updateAction($user_id, ACTION_SEE_TEACHER_BIOS, true)) {
-                    $response = "شما می توانید معرفی نامه هر یک از اساتید زیر را با کلیک روی اسم وی مشاهده کنید.";
-                    $keyboard = createCategoricalMenu(DB_TABLE_TEACHERS, null, DB_TEACHER_BIO . ' IS NOT NULL');
-                    if (!$keyboard) {
-                        $response = 'در حال حاضر هیچ معرفی نامه ای برای هیچ استادی ثبت نشده است!';
-                        resetAction($user_id);
-                    }
-                } else {
-                    $response = 'خطای غیرمنتظره پیش آمد! دوباره تلاش کنید!';
-                    resetAction($user_id);
-                }
+                $response = "شما می توانید معرفی نامه هر یک از اساتید زیر را با کلیک روی اسم وی مشاهده کنید.";
+                $keyboard = createCategoricalMenu(IA_SELECT_TEACHER_OPTIONS, DB_TABLE_TEACHERS, null, false, ORDER_BY_NAME, fn ($id) => [
+                    'a' => IA_SELECT_TEACHER_OPTIONS,
+                    'p' => [
+                        'op' =>  'bio',
+                        'id' => $id
+                    ]
+                ]);
+                break;
                 break;
             case CMD_FAVORITES:
                 $favs = getFavoritesList($user_id);
                 $response = createLinkedList($favs);
-                if (count($favs) > MAX_LINKED_LIST_LENGTH) {
-                    $keyboard = array(
-                        INLINE_KEYBOARD => array(
-                            array(
-                                array(TEXT_TAG => "بعدی", CALLBACK_DATA => DB_TABLE_FAVORITES . RELATED_DATA_SEPARATOR . '1'),
-                            ),
-                        ),
-                    );
+                if (count($favs) > LINKED_LIST_PAGE_LENGTH) {
+                    $keyboard = [
+                        INLINE_KEYBOARD => [
+                            [
+                                [TEXT_TAG => "بعدی", CALLBACK_DATA => jsonifyData(IA_LIST_FAVORITES, ['pg' => 1])],
+                            ],
+                        ],
+                    ];
                 }
                 break;
             default:
@@ -283,10 +281,6 @@ function handleCasualMessage(&$update)
                             $response = 'از لیست زیر درس موردنظر خود را انتخاب کنید:';
                             $keyboard = createCategoricalMenu(IA_UPLOAD_SAMPLE, DB_TABLE_COURSES);
                             break;
-                        case CMD_TEACHER_INTRODUCTION:
-                            $response = 'از لیست زیر استاد موردنظر خود را انتخاب کنید:';
-                            $keyboard = createCategoricalMenu(IA_SELECT_TEACHER_OPTIONS, DB_TABLE_TEACHERS);
-                            break;
                         case CMD_STATISTICS:
                             $response = "آمار ربات: \n";
                             foreach (getStatistics() as $field => $stat) {
@@ -325,11 +319,12 @@ function handleCasualMessage(&$update)
                             }
                             break;
                         case CMD_LINK_TEACHER:
+                        case CMD_TEACHER_INTRODUCTION:
                             $response = "استاد مورد نظر خود را از لیست زیر انتخاب کنید:";
                             $keyboard = createCategoricalMenu(IA_SELECT_TEACHER_OPTIONS, DB_TABLE_TEACHERS, null, false, ORDER_BY_NAME, fn ($id) => [
                                 'a' => IA_SELECT_TEACHER_OPTIONS,
                                 'p' => [
-                                    't' => 'link',
+                                    'op' =>  $data !== CMD_TEACHER_INTRODUCTION ? 'link' : 'int',
                                     'id' => $id
                                 ]
                             ]);
@@ -582,7 +577,7 @@ function handleCasualMessage(&$update)
                 break;
             case TEACHER_USER:
                 // double check if teacher_id is set
-                if ($user[DB_USER_ACTION] == ACTION_INTRODUCE_TA) {
+                if ($user[DB_USER_ACTION] == ACTION_ADD_TA) {
                     $response = startUpgradingUser($user_id, $message, TA_USER, 'حل تمرین شما', $user[DB_USER_CACHE]);
                 } else if ($user[DB_USER_ACTION] == ACTION_ASSIGN_USER_NAME) {
                     $response = updateUserField($user[DB_USER_CACHE], $data) ? "$data به عنوان حل تمرین شما ثبت شد. "
@@ -594,7 +589,7 @@ function handleCasualMessage(&$update)
                             $response = getTeachersFullDownloadStats($user[DB_ITEM_TEACHER_ID]);
                             break;
                         case CMD_INTRODUCE_TA:
-                            if (setActionAndCache($user_id, ACTION_INTRODUCE_TA, $user[DB_ITEM_TEACHER_ID])) {
+                            if (setActionAndCache($user_id, ACTION_ADD_TA, $user[DB_ITEM_TEACHER_ID])) {
                                 $response = 'یوزرنیم کاربر مورد نظر را وارد کنید یا یک پیام از او داخل ربات فوروارد کنید:';
                                 $keyboard = backToMainMenuKeyboard();
                             } else {

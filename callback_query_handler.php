@@ -148,23 +148,22 @@ function handleCallbackQuery(&$update)
                 resetAction($user_id);
                 break;
             case IA_LIST_FAVORITES:
-                if (($answer = validateInlineData($params, 'fav')) !== null)
+                if (($answer = validateInlineData($params, 'pg')) !== null)
                     break;
 
-
                 $favs = getFavoritesList($user_id);
-                $fav_id = $params['fav'];
+                $page = $params['pg'];
                 $keyboard_options = array();
-                if ($fav_id > 0) {
-                    $keyboard_options[] = array(TEXT_TAG => 'قبلی', CALLBACK_DATA => DB_TABLE_FAVORITES . RELATED_DATA_SEPARATOR . ($fav_id - 1));
+                if ($page > 0) {
+                    $keyboard_options[] = [TEXT_TAG => 'قبلی', CALLBACK_DATA => jsonifyData(IA_LIST_FAVORITES, ['pg' => ($page - 1)])];
                 }
 
-                if (($fav_id + 1) * MAX_LINKED_LIST_LENGTH < count($favs)) {
-                    $keyboard_options[] = array(TEXT_TAG => 'بعدی', CALLBACK_DATA => DB_TABLE_FAVORITES . RELATED_DATA_SEPARATOR . ($fav_id + 1));
+                if (($page + 1) * LINKED_LIST_PAGE_LENGTH < count($favs)) {
+                    $keyboard_options[] = [TEXT_TAG => 'بعدی',CALLBACK_DATA => jsonifyData(IA_LIST_FAVORITES, ['pg' => ($page + 1)])];
                 }
 
-                $keyboard = array(INLINE_KEYBOARD => array($keyboard_options));
-                $answer = createLinkedList($favs, $fav_id);
+                $keyboard = [INLINE_KEYBOARD => [$keyboard_options]];
+                $answer = createLinkedList($favs, $page);
                 break;
             case IA_UPLOAD_BOOKLET:
             case IA_EDIT_BOOKLET_CAPTION:

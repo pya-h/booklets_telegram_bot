@@ -2,7 +2,7 @@
 
 // UI config
 defined('MAX_COLUMN_LENGTH') or define('MAX_COLUMN_LENGTH', 40);
-defined('MAX_LINKED_LIST_LENGTH') or define('MAX_LINKED_LIST_LENGTH', 10);
+defined('LINKED_LIST_PAGE_LENGTH') or define('LINKED_LIST_PAGE_LENGTH', 10);
 defined('CMD_GOD_ACCESS') or define('CMD_GOD_ACCESS', '/godAccess');
 
 // USER MODE SPECIFIC MENUS
