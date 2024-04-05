@@ -71,7 +71,8 @@ function handleCallbackQuery(&$update)
                     }
                     if ($categories['options'] == '0' || $categories['options'] == '1') {
                         $booklets = getBooklets(
-                            selectBookletByCategoriesCondition($categories[DB_ITEM_TEACHER_ID], $categories[DB_ITEM_COURSE_ID])
+                            $categories[DB_ITEM_TEACHER_ID],
+                            $categories[DB_ITEM_COURSE_ID]
                         );
 
                         if (!isset($booklets[0])) {
@@ -107,17 +108,13 @@ function handleCallbackQuery(&$update)
 
                 if ($action === IA_GET_BOOKLET) {
                     $teacher_id = $state['tc'];
-                    $filter = $choice >= 0 ? DB_ITEM_ID . "=$choice"
-                        : DB_ITEM_TEACHER_ID . "=$teacher_id" . ' AND ' . DB_ITEM_COURSE_ID . "=$course_id";
-                    $items = getBooklets($filter, true);
+                    $items = getBooklets($teacher_id, $course_id, $choice, true);
                     $teacher = $items[0]['teacher'] ?? null;
                     $course = $items[0]['course'] ?? null;
                     $get_caption = fn (array $item) => $item[DB_BOOKLETS_INDEX] . ': ' . $item[DB_BOOKLETS_CAPTION];
                     $answer = "جزوه (ها)ی انتخابی درس $course - استاد $teacher:\n";
                 } else {
-                    $filter = $choice >= 0 ? DB_ITEM_ID . "=$choice"
-                        : DB_ITEM_COURSE_ID . "=$course_id";
-                    $items = getSamples($filter, true);
+                    $items = getSamples($course_id, $choice, true);
                     $course = $items[0]['course'] ?? null;
                     $get_caption = fn (array $item) => $item[DB_ITEM_NAME];
                     $answer = "نمونه سوالات درس $course:\n";
@@ -151,11 +148,11 @@ function handleCallbackQuery(&$update)
                 $page = $params['pg'];
                 $keyboard_options = array();
                 if ($page > 0) {
-                    $keyboard_options[] = [TEXT_TAG => 'قبلی', CALLBACK_DATA => jsonifyData(IA_LIST_FAVORITES, ['pg' => ($page - 1)])];
+                    $keyboard_options[] = [TEXT_TAG => 'قبلی', CALLBACK_DATA => jsonifyCallbackData(IA_LIST_FAVORITES, ['pg' => ($page - 1)])];
                 }
 
                 if (($page + 1) * LINKED_LIST_PAGE_LENGTH < count($favs)) {
-                    $keyboard_options[] = [TEXT_TAG => 'بعدی',CALLBACK_DATA => jsonifyData(IA_LIST_FAVORITES, ['pg' => ($page + 1)])];
+                    $keyboard_options[] = [TEXT_TAG => 'بعدی', CALLBACK_DATA => jsonifyCallbackData(IA_LIST_FAVORITES, ['pg' => ($page + 1)])];
                 }
 
                 $keyboard = [INLINE_KEYBOARD => [$keyboard_options]];
@@ -220,7 +217,8 @@ function handleCallbackQuery(&$update)
 
                         if ($categories['options'] == 0 || $categories['options'] == 1) {
                             $booklets = getBooklets(
-                                selectBookletByCategoriesCondition($categories[DB_ITEM_TEACHER_ID], $categories[DB_ITEM_COURSE_ID])
+                                $categories[DB_ITEM_TEACHER_ID],
+                                $categories[DB_ITEM_COURSE_ID]
                             );
                             if (isset($booklets[0])) {
                                 // if there is some booklets
@@ -306,35 +304,28 @@ function handleCallbackQuery(&$update)
 
                 break;
             case IA_LIST_SAMPLES:
-                // FIXME: update create menu function
                 if (!isset($params['t']) || $params['t'] !== 'cr' || !isset($params['id']) || $params['id'] < 0) {
                     $answer = 'برای مشاهده لیست نمونه سوالات هر درس باید درس مربوطه را انتخاب کنید وای به نظر می رسد به دلیلی نامعلوم درسی انتخاب نشده است! لطفا دوباره تلاش کنید ...';
                     break;
                 }
 
-                $course_id = $params['id'];
-                $samples = getSamples(DB_TABLE_SAMPLES . '.' . DB_ITEM_COURSE_ID . "=$course_id");
-                if (isset($samples[0])) {
-                    // if there is some booklets
-                    $answer = 'نمونه سوال موردنظر خود را از لیست زیر انتخاب کن:';
-                    if (updateAction($user_id, ACTION_SELECT_SAMPLE_TO_GET)) {
-                        $keyboard = createSamplesMenu(IA_GET_SAMPLE, $samples);
-                        if (isSuperior($user)) {
-                            $downloads = 0;
-                            foreach ($samples as &$sample) {
-                                $downloads += $sample[DB_ITEM_DOWNLOADS];
-                            }
-
-                            $answer = appendStatsToMessage($answer, $downloads);
-                        }
-                    } else {
-                        $answer = 'مشکلی حین دریافت اطلاعات پیش آمد! لطفا لحظاتی بعد دوباره تلاش کنید.';
-                        resetAction($user_id);
-                    }
-                } else {
+                $samples = getSamples($params['id']);
+                if (!isset($samples[0])) {
                     $answer = 'هنوز نمونه سوالی توسط ادمین ها ثبت نشده است!';
-                    resetAction($user_id);
+                    break;
                 }
+                // if there is some booklets
+                $answer = 'نمونه سوال موردنظر خود را از لیست زیر انتخاب کن:';
+                $keyboard = createSamplesMenu(IA_GET_SAMPLE, $samples);
+                if (isSuperior($user)) {
+                    $downloads = 0;
+                    foreach ($samples as &$sample) {
+                        $downloads += $sample[DB_ITEM_DOWNLOADS];
+                    }
+
+                    $answer = appendStatsToMessage($answer, $downloads);
+                }
+
                 break;
 
             case IA_SHOW_MESSAGE:

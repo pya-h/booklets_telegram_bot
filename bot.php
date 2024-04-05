@@ -56,7 +56,7 @@ function createCallbackData(string $action, ?array $params, ?array $state = null
     return $data;
 }
 
-function jsonifyData(string $action, ?array $params, ?array $state = null, $extra = null): string
+function jsonifyCallbackData(string $action, ?array $params, ?array $state = null, $extra = null): string
 {
     return json_encode(
         createCallbackData($action, $params, $state, $extra)

@@ -5,7 +5,7 @@ require_once __DIR__ . '/user.php';
 require_once __DIR__ . '/bot.php';
 
 
-function alignButtons(array &$items, string $caption_key, Closure $getData, string $data_key = DB_ITEM_ID, string $alternative_caption_key = null, $numbering = true): ?array
+function alignButtons(array &$items, string $caption_key, Closure $createCallbackData, string $data_key = DB_ITEM_ID, string $alternative_caption_key = null, $numbering = true): ?array
 {
     $buttons = array(array()); // an inline keyboard
     $current_row = 0;
@@ -15,7 +15,7 @@ function alignButtons(array &$items, string $caption_key, Closure $getData, stri
         if (isset($item[$data_key]) || isset($item[$alternative_caption_key])) {
             array_unshift($buttons[$current_row], array(
                 TEXT_TAG => ($numbering ? ($count + 1) . ' ' : '') . ($item[$caption_key] ?? $item[$alternative_caption_key] ?? $item[$data_key]),
-                CALLBACK_DATA => json_encode($getData($item[$data_key] ?? $item[DB_ITEM_ID]))
+                CALLBACK_DATA => json_encode($createCallbackData($item[$data_key] ?? $item[DB_ITEM_ID]))
             ));
             // buttons callback_data is as: type/id, type determines whether it's a course or a teacher;
             $column_length += strlen($item[$caption_key]);
@@ -32,14 +32,24 @@ function alignButtons(array &$items, string $caption_key, Closure $getData, stri
     return !$no_valid_options ? $buttons : null;
 }
 
-function createCategoricalMenu(int $action, ?string $table_name, ?array $state = null, bool $filter_by_previous_category = true, int $order_by = ORDER_BY_NAME, ?Closure $custom_data_creator = null): ?array
-{
+function createCategoricalMenu(
+    int $action,
+    ?string $table_name,
+    ?array $state = null,
+    bool $filter_by_previous_category = true,
+    int $order_by = ORDER_BY_NAME,
+    ?Closure $custom_data_creator = null,
+    ?string $specific_where_clause = null
+): ?array {
     if (!$table_name) {
         $state['t'] = strtolower($state['t']);
         $table_name = $state['t'] === 'cr' ? DB_TABLE_TEACHERS : DB_TABLE_COURSES;
     }
 
     $query = 'SELECT ' . DB_ITEM_ID . ', ' . DB_ITEM_NAME . ' FROM ' . $table_name;
+
+    if ($specific_where_clause)
+        $query .= ' WHERE ' . $specific_where_clause;
 
     if (!$order_by) {
         $query .= ' ORDER BY ' . DB_ITEM_NAME;
@@ -108,7 +118,7 @@ function createSessionsMenu(int $action, array &$booklets, array $categories, bo
 {
     $by_caption = $categories['options'];
 
-    $getData = fn ($id) => [
+    $createCallbackData = fn ($id) => [
         'a' => $action,
         's' => [
             'tc' => $categories[DB_ITEM_TEACHER_ID],
@@ -124,7 +134,7 @@ function createSessionsMenu(int $action, array &$booklets, array $categories, bo
     $options = alignButtons(
         $booklets,
         !$by_caption ? DB_BOOKLETS_INDEX : DB_BOOKLETS_CAPTION,
-        $getData,
+        $createCallbackData,
         DB_ITEM_ID,
         null,
         $by_caption
@@ -132,19 +142,21 @@ function createSessionsMenu(int $action, array &$booklets, array $categories, bo
     if (!$options) return null;
     if ($all_items_option)
         $options[] = array(
-            array(TEXT_TAG => 'همه', CALLBACK_DATA => $getData(-1))
+            array(TEXT_TAG => 'همه', CALLBACK_DATA => $createCallbackData(-1))
         );
     return array(INLINE_KEYBOARD => $options);
 }
 
-function createSamplesMenu(int $action, array &$samples, bool $all_items_option = true): ?array
+function createSamplesMenu(int $action, array &$samples): ?array
 {
-    $options = alignButtons($samples, DB_ITEM_NAME, DB_TABLE_SAMPLES . '.' . DB_ITEM_ID . '=', DB_ITEM_ID);
+    $createCallbackData = fn ($id) => ['a' => $action, 'p' => ['t' => 'sm', 'id' => $id]];
+
+    $options = alignButtons($samples, DB_ITEM_NAME, $createCallbackData);
     if (!$options) return null;
-    if ($all_items_option)
-        $options[] = array(
-            array(TEXT_TAG => 'همه', CALLBACK_DATA => DB_TABLE_SAMPLES . '.' . DB_ITEM_COURSE_ID . '=' . $samples[0][DB_ITEM_COURSE_ID])
-        );
+    
+    $options[] = [
+        [TEXT_TAG => 'همه', CALLBACK_DATA => $createCallbackData(-1)]
+    ];
     return array(INLINE_KEYBOARD => $options);
 }
 

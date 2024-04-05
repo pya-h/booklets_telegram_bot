@@ -144,7 +144,7 @@ function getStatistics(): array
   return $stats;
 }
 
-function selectBookletByCategoriesCondition($teacher_id, $course_id): string
+function categoricalWhereClause($teacher_id, $course_id): string
 {
   return DB_TABLE_BOOKLETS . '.' . DB_ITEM_TEACHER_ID . "=$teacher_id AND "
     . DB_TABLE_BOOKLETS . '.' . DB_ITEM_COURSE_ID . "=$course_id";

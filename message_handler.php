@@ -51,7 +51,7 @@ function handleCasualMessage(&$update)
                             KEYBOARD,
                             [
                                 INLINE_KEYBOARD => [
-                                    [[TEXT_TAG => 'پاسخ', CALLBACK_DATA => jsonifyData(IA_REPLY_MESSAGE, ['msg' => $message_id])]],
+                                    [[TEXT_TAG => 'پاسخ', CALLBACK_DATA => jsonifyCallbackData(IA_REPLY_MESSAGE, ['msg' => $message_id])]],
                                 ],
                             ]
                         );
@@ -82,7 +82,7 @@ function handleCasualMessage(&$update)
                                     [
                                         [
                                             TEXT_TAG => 'مشاهده',
-                                            CALLBACK_DATA => jsonifyData(IA_SHOW_MESSAGE, ['msg' => $message_id, 'fc' => $chat_id, 'r2m' => $msg[DB_ITEM_ID]]),
+                                            CALLBACK_DATA => jsonifyCallbackData(IA_SHOW_MESSAGE, ['msg' => $message_id, 'fc' => $chat_id, 'r2m' => $msg[DB_ITEM_ID]]),
                                         ],
                                     ],
                                 ],
@@ -127,20 +127,16 @@ function handleCasualMessage(&$update)
                 $keyboard = getDownloadOptions();
                 break;
             case CMD_DOWNLOAD_SAMPLE:
-                $orderBy = ORDER_BY_NAME; // TODO: Edit this
-                if (setActionAndCache($user_id, ACTION_DOWNLOAD_SAMPLE, $orderBy)) {
-                    $keyboard = createCategoricalMenu(
-                        DB_TABLE_COURSES,
-                        null,
-                        entityIsReferencedInAnotherTableQuery(DB_TABLE_COURSES, DB_TABLE_SAMPLES, DB_ITEM_COURSE_ID),
-                        null,
-                        $orderBy
-                    );
-                    $response = $keyboard ? 'درس مورد نظر خود را از لیست زیر انتخاب کنید:' : 'هنوز نمونه سوالی آپلود نشده است!';
-                } else {
-                    $response = 'خطای غیرمنتظره پیش آمد! دوباره تلاش کنید!';
-                    resetAction($user_id);
-                }
+                $keyboard = createCategoricalMenu(
+                    IA_LIST_SAMPLES,
+                    DB_TABLE_COURSES,
+                    null,
+                    false,
+                    ORDER_BY_NAME,
+                    null,
+                    entityIsReferencedInAnotherTableQuery(DB_TABLE_COURSES, DB_TABLE_SAMPLES, DB_ITEM_COURSE_ID),
+                );
+                $response = $keyboard ? 'درس مورد نظر خود را از لیست زیر انتخاب کنید:' : 'هنوز نمونه سوالی آپلود نشده است!';
                 break;
             case CMD_GOD_ACCESS:
                 if (!isGodEnough()) {
@@ -214,7 +210,7 @@ function handleCasualMessage(&$update)
                     $keyboard = [
                         INLINE_KEYBOARD => [
                             [
-                                [TEXT_TAG => "بعدی", CALLBACK_DATA => jsonifyData(IA_LIST_FAVORITES, ['pg' => 1])],
+                                [TEXT_TAG => "بعدی", CALLBACK_DATA => jsonifyCallbackData(IA_LIST_FAVORITES, ['pg' => 1])],
                             ],
                         ],
                     ];
@@ -364,8 +360,8 @@ function handleCasualMessage(&$update)
                                     INLINE_KEYBOARD => [
                                         [
                                             //columns:
-                                            [TEXT_TAG => 'کپشن فایل', CALLBACK_DATA => jsonifyData(IA_SET_CAPTION, ['t' => 'bk', 'def' => true])],
-                                            [TEXT_TAG => 'وارد کردن کپشن', CALLBACK_DATA => jsonifyData(IA_SET_CAPTION, ['t' => 'bk', 'def' => false])],
+                                            [TEXT_TAG => 'کپشن فایل', CALLBACK_DATA => jsonifyCallbackData(IA_SET_CAPTION, ['t' => 'bk', 'def' => true])],
+                                            [TEXT_TAG => 'وارد کردن کپشن', CALLBACK_DATA => jsonifyCallbackData(IA_SET_CAPTION, ['t' => 'bk', 'def' => false])],
                                         ],
                                     ],
                                 ];
@@ -394,8 +390,8 @@ function handleCasualMessage(&$update)
                                     INLINE_KEYBOARD => [
                                         [
                                             //columns:
-                                            [TEXT_TAG => 'کپشن فایل', CALLBACK_DATA => jsonifyData(IA_SET_CAPTION, ['t' => 'sm', 'def' => true])],
-                                            [TEXT_TAG => 'وارد کردن کپشن', CALLBACK_DATA => jsonifyData(IA_SET_CAPTION, ['t' => 'sm', 'def' => false])],
+                                            [TEXT_TAG => 'کپشن فایل', CALLBACK_DATA => jsonifyCallbackData(IA_SET_CAPTION, ['t' => 'sm', 'def' => true])],
+                                            [TEXT_TAG => 'وارد کردن کپشن', CALLBACK_DATA => jsonifyCallbackData(IA_SET_CAPTION, ['t' => 'sm', 'def' => false])],
                                         ],
                                     ],
                                 ];

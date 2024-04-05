@@ -127,8 +127,12 @@ function getTeachersField($teacher_id, string $field = DB_ITEM_NAME)
     return $values[0] ?? null;
 }
 
-function getBooklets(string $filter = '1=1', bool $increaseDownloads = false): ?array
+function getBooklets($teacher_id, $course_id, $booklet_id=null, bool $increaseDownloads=false): ?array
 {
+    $filter = $booklet_id && $booklet_id >= 0 
+        ? DB_TABLE_BOOKLETS . '.' . DB_ITEM_ID . "=$booklet_id"
+        : categoricalWhereClause($teacher_id, $course_id);
+        
     $db = Database::getInstance();
     if ($increaseDownloads) {
         $db->update('UPDATE ' . DB_TABLE_BOOKLETS . ' SET ' . DB_ITEM_DOWNLOADS . '=' . DB_ITEM_DOWNLOADS . " + 1 WHERE $filter");
