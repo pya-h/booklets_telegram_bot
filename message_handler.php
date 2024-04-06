@@ -59,7 +59,11 @@ function handleCasualMessage(&$update)
                     $response = "پیام شما با موفقیت ارسال شد✅ \n در صورت لزوم، $group_name پاسخ را از طریق همین بات به شما اعلام خواهد کرد.";
                     resetAction($user_id);
                 } else if ($user[DB_USER_ACTION] == ACTION_WRITE_REPLY_TO_USER && $user[DB_USER_MODE] != NORMAL_USER) {
-                    $msg = getMessage($user[DB_USER_CACHE]);
+                    if(!($msg = getMessage($user[DB_USER_CACHE]))) {
+                        $response = 'چنین پیامی در دیتابیس وجود ندارد و امکان پاسخ دهی به آن نیست!';
+                        break;
+                    }
+
                     $answer_made_by = 'ادمین';
                     if ($user[DB_USER_MODE] == TEACHER_USER) {
                         $answer_made_by = 'استاد';
@@ -67,54 +71,48 @@ function handleCasualMessage(&$update)
                         $answer_made_by = 'حل تمرین استاد';
                     }
 
-                    if ($msg) {
-                        callMethod(
-                            METH_SEND_MESSAGE,
-                            CHAT_ID,
-                            $msg[DB_MESSAGES_SENDER_ID],
-                            TEXT_TAG,
-                            "$answer_made_by پیام شما را پاسخ داد.",
-                            'reply_to_message_id',
-                            $msg[DB_ITEM_ID],
-                            KEYBOARD,
-                            [
-                                INLINE_KEYBOARD => [
+                    callMethod(
+                        METH_SEND_MESSAGE,
+                        CHAT_ID,
+                        $msg[DB_MESSAGES_SENDER_ID],
+                        TEXT_TAG,
+                        "$answer_made_by پیام شما را پاسخ داد.",
+                        'reply_to_message_id',
+                        $msg[DB_ITEM_ID],
+                        KEYBOARD,
+                        [
+                            INLINE_KEYBOARD => [
+                                [
                                     [
-                                        [
-                                            TEXT_TAG => 'مشاهده',
-                                            CALLBACK_DATA => jsonifyCallbackData(IA_SHOW_MESSAGE, ['msg' => $message_id, 'fc' => $chat_id, 'r2m' => $msg[DB_ITEM_ID]]),
-                                        ],
+                                        TEXT_TAG => 'مشاهده',
+                                        CALLBACK_DATA => jsonifyCallbackData(IA_SHOW_MESSAGE, ['msg' => $message_id, 'fc' => $chat_id, 'r2m' => $msg[DB_ITEM_ID]]),
                                     ],
                                 ],
-                            ]
-                        );
-                        markMessageAsAnswered($user[DB_USER_CACHE]);
-                        $response = 'پاسخ شما با موفقیت ارسال شد.';
-                    } else {
-                        $response = 'چنین پیامی در دیتابیس وجود ندارد و امکان پاسخ دهی به آن نیست!';
-                    }
+                            ],
+                        ]
+                    );
+                    markMessageAsAnswered($user[DB_USER_CACHE]);
+                    $response = 'پاسخ شما با موفقیت ارسال شد.';
 
                     resetAction($user_id);
                 } else if (strpos($data, CMD_GET_BOOKLET_PREFIX) !== false) {
                     $params = explode(CMD_COMMAND_PARAM_SEPARATOR, $data);
-                    if (count($params) === 3) {
-                        if (updateAction($user_id, ACTION_DOWNLOAD_BOOKLET, true)) {
-                            $response = 'طبقه بندی جزوه ها بر اساس:';
-                            $categories = [DB_ITEM_TEACHER_ID => $params[1], DB_ITEM_COURSE_ID => $params[2]];
-                            $keyboard = createClassifyByMenu(
-                                $user_id,
-                                $categories,
-                                createCallbackData(IA_LIST_BOOKLETS, ['t' => 'tc', 'id' => $params[1]], ['t' => 'cr', 'id' => $params[2]])
-                            );
-                        } else {
-                            $response = 'مشکلی حین اجرای دستور موردنظر پیش آمد! لطفا لحظاتی دیگر دوباره تلاش کتید.';
-                        }
-                    } else {
+
+                    if (!isset($params[2])) {
                         $response = 'دستور مورد نظر شناسایی نشد!';
+                        break;
                     }
-                } else {
+
+                    $response = 'طبقه بندی جزوه ها بر اساس:';
+                    $categories = [DB_ITEM_TEACHER_ID => $params[1], DB_ITEM_COURSE_ID => $params[2]];
+                    $keyboard = createClassifyByMenu(
+                        $user_id,
+                        $categories,
+                        createCallbackData(IA_LIST_BOOKLETS, ['t' => 'tc', 'id' => $params[1]], ['t' => 'cr', 'id' => $params[2]])
+                    );
+
+                } else
                     $response = handleGospel($user, $data);
-                }
 
                 break;
         }

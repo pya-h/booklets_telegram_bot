@@ -137,7 +137,6 @@ function handleCallbackQuery(&$update)
                 if (isSuperior($user))
                     $answer = appendStatsToMessage($answer, $downloads);
 
-
                 resetAction($user_id);
                 break;
             case IA_LIST_FAVORITES:
@@ -165,6 +164,7 @@ function handleCallbackQuery(&$update)
                     $answer = 'شما اجازه انجام چنین کاری را ندارید!';
                     break;
                 }
+
                 if (($answer = validateCategoricalCallbackData($params)) !== null) {
                     break;
                 }
@@ -261,32 +261,34 @@ function handleCallbackQuery(&$update)
                 $use_file_caption = $params['def'] ?? false;
                 $is_booklet = $params['t'] === 'bk';
                 $file_category_name = $is_booklet ? 'جزوه' : 'نمونه سوال';
-                if (!$use_file_caption) {
-                    $answer = $is_booklet ? backupBooklet($user) : backupSample($user);
-                    if (!$answer) {
-                        $answer = "کپشن فایل به عنوان کپشن $file_category_name ثبت شد!";
-                        // TODO: is below line needed? user is already on this action
-                        // if(updateAction($user_id, $is_booklet ? ACTION_SENDING_BOOKLET_FILE : ACTION_SENDING_SAMPLE_FILE, ))
-                        callMethod(
-                            METH_SEND_MESSAGE,
-                            CHAT_ID,
-                            $chat_id,
-                            MESSAGE_ID_TAG,
-                            $message_id,
-                            TEXT_TAG,
-                            "حالا $file_category_name بعدی رو بفرست: \nنکته: برای اتمام فرایند آپلود $file_category_name های این درس از گزینه بازگشت به منو استفاده کنید یا روی دستور زیر کلیک کنید:\n /cancel",
-                            KEYBOARD,
-                            backToMainMenuKeyboard()
-                        );
-                    } else {
-                        resetAction($user_id);
-                    }
-                } else {
+
+                if ($use_file_caption) {
                     $answer = 'کپشن موردنظرتو وارد کن:';
+                    break;
                 }
+                $answer = $is_booklet ? backupBooklet($user) : backupSample($user);
+
+                if (!$answer) {
+                    resetAction($user_id);
+                    break;
+                }
+
+                $answer = "کپشن فایل به عنوان کپشن $file_category_name ثبت شد!";
+
+                callMethod(
+                    METH_SEND_MESSAGE,
+                    CHAT_ID,
+                    $chat_id,
+                    MESSAGE_ID_TAG,
+                    $message_id,
+                    TEXT_TAG,
+                    "حالا $file_category_name بعدی رو بفرست: \nنکته: برای اتمام فرایند آپلود $file_category_name های این درس از گزینه بازگشت به منو استفاده کنید یا روی دستور زیر کلیک کنید:\n /cancel",
+                    KEYBOARD,
+                    backToMainMenuKeyboard()
+                );
+
                 break;
             case IA_UPLOAD_SAMPLE:
-                // TODO: Create the first menu in message_handler.php
                 if (!isSuperior($user)) {
                     $answer = 'شما اجازه انجام چنین کاری را ندارید!';
                     break;

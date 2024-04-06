@@ -10,10 +10,10 @@ class Database
   private $connection;
   private static $database;
 
-  public static function getInstance($option = null): Database
+  public static function getInstance(): Database
   {
     if (self::$database == null) {
-      self::$database = new Database($option);
+      self::$database = new Database();
     }
 
     return self::$database;
