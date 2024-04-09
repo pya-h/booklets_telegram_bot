@@ -13,10 +13,15 @@ function alignButtons(array &$items, string $caption_key, Closure $createCallbac
     $no_valid_options = true;
     foreach ($items as $count => &$item) {
         if (isset($item[$data_key]) || isset($item[$alternative_caption_key])) {
-            array_unshift($buttons[$current_row], array(
-                TEXT_TAG => ($numbering ? ($count + 1) . ' ' : '') . ($item[$caption_key] ?? $item[$alternative_caption_key] ?? $item[$data_key]),
-                CALLBACK_DATA => json_encode($createCallbackData($item[$data_key] ?? $item[DB_ITEM_ID]))
-            ));
+            $callbackdata = json_encode($createCallbackData($item[$data_key] ?? $item[DB_ITEM_ID]));
+
+            array_unshift(
+                $buttons[$current_row],
+                array(
+                    TEXT_TAG => ($numbering ? ($count + 1) . ' ' : '') . ($item[$caption_key] ?? $item[$alternative_caption_key] ?? $item[$data_key]),
+                    CALLBACK_DATA => str_replace('\"', "'", $callbackdata)
+                )
+            );
             // buttons callback_data is as: type/id, type determines whether it's a course or a teacher;
             $column_length += strlen($item[$caption_key]);
             if ($column_length > MAX_COLUMN_LENGTH) {
@@ -25,7 +30,8 @@ function alignButtons(array &$items, string $caption_key, Closure $createCallbac
                 $buttons[] = array();
             }
 
-            if ($no_valid_options) $no_valid_options = false;
+            if ($no_valid_options)
+                $no_valid_options = false;
         }
     }
 
@@ -41,9 +47,10 @@ function createCategoricalMenu(
     ?Closure $custom_data_creator = null,
     ?string $specific_where_clause = null
 ): ?array {
+    $state_category = null;
     if (!$table_name) {
-        $state['t'] = strtolower($state['t']);
-        $table_name = $state['t'] === 'cr' ? DB_TABLE_TEACHERS : DB_TABLE_COURSES;
+        $state_category = isset($state['c']) ? 'c' : 't';
+        $table_name = $state_category === 'c' ? DB_TABLE_TEACHERS : DB_TABLE_COURSES;
     }
 
     $query = 'SELECT ' . DB_ITEM_ID . ', ' . DB_ITEM_NAME . ' FROM ' . $table_name;
@@ -76,7 +83,7 @@ function createCategoricalMenu(
     $items = Database::getInstance()->query($query);
     // FIXME: EDIT THIS SECTION TO USE ONLY SWL QUERIES
     if ($filter_by_previous_category && $state !== null) {
-        $selected_category_item_id = $state['id'];
+        $selected_category_item_id = $state[$state_category];
         if ($table_name !== DB_TABLE_COURSES) {
             $selected_category_key = DB_ITEM_COURSE_ID;
             $next_category_key = DB_ITEM_TEACHER_ID;
@@ -94,15 +101,22 @@ function createCategoricalMenu(
             return in_array($item[DB_ITEM_ID], $booklets);
         }));
     }
-
-    $options = alignButtons($items, DB_ITEM_NAME, !$custom_data_creator ? fn ($id) => [
-        'a' => $action,
-        's' => $state,
-        'p' => [
-            't' => $table_name !== DB_TABLE_COURSES ? 'tc' : 'cr',
-            'id' => $id
-        ]
-    ] : $custom_data_creator);
+    $state_category = $state ? $state_category : null;
+    $next_category = $table_name !== DB_TABLE_COURSES ? 't' : 'c';
+    $callbackDataCreator = $custom_data_creator;
+    if (!$callbackDataCreator) {
+        if (!$state_category)
+            $callbackDataCreator = fn($id) => [
+                'a' => $action,
+                'd' => [$next_category => $id]
+            ];
+        else
+            $callbackDataCreator = fn($id) => [
+                'a' => $action,
+                'd' => [$next_category => $id, $state_category => $state[$state_category]]
+            ];
+    }
+    $options = alignButtons($items, DB_ITEM_NAME, $callbackDataCreator);
     return $options ? array(INLINE_KEYBOARD => $options) : null;
 }
 
@@ -110,7 +124,7 @@ function createUsersMenu(int $action, string $filter_query, string $filter_index
 {
     $fields = implode(',', [DB_ITEM_ID, DB_ITEM_NAME, DB_USER_USERNAME]);
     $items = Database::getInstance()->query("SELECT $fields FROM " . DB_TABLE_USERS . " WHERE $filter_query ORDER BY " . DB_ITEM_NAME);
-    $options = alignButtons($items, DB_ITEM_NAME, fn ($id) => ['a' => $action, 'p' => ['t' => 'u', 'id' => $id]], $filter_index, DB_USER_USERNAME);
+    $options = alignButtons($items, DB_ITEM_NAME, fn($id) => ['a' => $action, 'd' => ['u' => $id]], $filter_index, DB_USER_USERNAME);
     return $options ? array(INLINE_KEYBOARD => $options) : null;
 }
 
@@ -118,17 +132,14 @@ function createSessionsMenu(int $action, array &$booklets, array $categories, bo
 {
     $by_caption = $categories['options'];
 
-    $createCallbackData = fn ($id) => [
+    $createCallbackData = fn($id) => [
         'a' => $action,
-        's' => [
-            'tc' => $categories[DB_ITEM_TEACHER_ID],
-            'cr' => $categories[DB_ITEM_COURSE_ID],
-            'x' => $categories['options']
+        'd' => [
+            't' => $categories[DB_ITEM_TEACHER_ID],
+            'c' => $categories[DB_ITEM_COURSE_ID],
+            'b' => $id
         ],
-        'p' => [
-            't' => 'bk',
-            'id' => $id
-        ]
+        'x' => $categories['options']
     ];
 
     $options = alignButtons(
@@ -139,23 +150,25 @@ function createSessionsMenu(int $action, array &$booklets, array $categories, bo
         null,
         $by_caption
     );
-    if (!$options) return null;
+    if (!$options)
+        return null;
     if ($all_items_option)
         $options[] = array(
-            array(TEXT_TAG => 'همه', CALLBACK_DATA => $createCallbackData(-1))
+            array(TEXT_TAG => 'همه', CALLBACK_DATA => json_encode($createCallbackData(-1)))
         );
     return array(INLINE_KEYBOARD => $options);
 }
 
 function createSamplesMenu(int $action, array &$samples): ?array
 {
-    $createCallbackData = fn ($id) => ['a' => $action, 'p' => ['t' => 'sm', 'id' => $id]];
+    $createCallbackData = fn($id) => ['a' => $action, 'p' => ['e' => 'sm', 'id' => $id]];
 
     $options = alignButtons($samples, DB_ITEM_NAME, $createCallbackData);
-    if (!$options) return null;
-    
+    if (!$options)
+        return null;
+
     $options[] = [
-        [TEXT_TAG => 'همه', CALLBACK_DATA => $createCallbackData(-1)]
+        [TEXT_TAG => 'همه', CALLBACK_DATA => json_encode($createCallbackData(-1))]
     ];
     return array(INLINE_KEYBOARD => $options);
 }
@@ -164,7 +177,8 @@ function getMainMenu(int $user_mode): array
 {
     // TODO: changed this fucked up peace
     $keyboard = array(
-        'resize_keyboard' => true, 'one_time_keyboard' => false,
+        'resize_keyboard' => true,
+        'one_time_keyboard' => false,
         'keyboard' => $user_mode == ADMIN_USER || $user_mode == GOD_USER ?
             [ // admin or god
                 [CMD_DOWNLOAD_BOOKLET, CMD_DOWNLOAD_SAMPLE, CMD_UPLOAD], // casual keyboard
@@ -190,7 +204,8 @@ function getMainMenu(int $user_mode): array
 function backToMainMenuKeyboard(?array $other_options = null): array
 {
     $keyboard = array(
-        'resize_keyboard' => true, 'one_time_keyboard' => false,
+        'resize_keyboard' => true,
+        'one_time_keyboard' => false,
         'keyboard' => array(
             array(CMD_MAIN_MENU)
         )
@@ -204,7 +219,8 @@ function backToMainMenuKeyboard(?array $other_options = null): array
 function getDownloadOptions(): array
 {
     return array(
-        'resize_keyboard' => true, 'one_time_keyboard' => false,
+        'resize_keyboard' => true,
+        'one_time_keyboard' => false,
         'keyboard' => [
             [CMD_DOWNLOAD_BY_TEACHER, CMD_DOWNLOAD_BY_COURSE],
             [CMD_DOWNLOAD_BY_MOST_DOWNLOADED_TEACHER, CMD_DOWNLOAD_BY_MOST_DOWNLOADED_COURSE],
@@ -233,12 +249,12 @@ function createClassifyByMenu($user_id, &$categories, $callback_data): array
 {
     $is_in_favs = isInFavoritesList($user_id, $categories);
     switch ($categories['options']) {
-        case '+f':
+        case IAX_ADD_TO_FAVORITES:
             if (!$is_in_favs)
                 updateFavoritesList($user_id, $categories);
             $is_in_favs = true;
             break;
-        case '-f':
+        case IAX_REMOVE_FROM_FAVORITES:
             if ($is_in_favs)
                 updateFavoritesList($user_id, $categories, true);
             $is_in_favs = false;
@@ -257,8 +273,8 @@ function createClassifyByMenu($user_id, &$categories, $callback_data): array
                 [TEXT_TAG => 'عنوان جزوه', CALLBACK_DATA => $addExtraToCallbackData(1)],
             ],
             [
-                !$is_in_favs ? [TEXT_TAG => 'افزودن به علاقه مندی ها ❤️', CALLBACK_DATA => $addExtraToCallbackData('+f')]
-                    :  [TEXT_TAG => 'حذف از علاقه مندی ها ❌', CALLBACK_DATA => $addExtraToCallbackData('-f')]
+                !$is_in_favs ? [TEXT_TAG => 'افزودن به علاقه مندی ها ❤️', CALLBACK_DATA => $addExtraToCallbackData(IAX_ADD_TO_FAVORITES)]
+                : [TEXT_TAG => 'حذف از علاقه مندی ها ❌', CALLBACK_DATA => $addExtraToCallbackData(IAX_REMOVE_FROM_FAVORITES)]
             ]
         ]
     ];

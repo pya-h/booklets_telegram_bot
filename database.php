@@ -98,24 +98,10 @@ class Database
 // project specific functions:
 function extractCategories(array $categories, $options = null): array
 {
-    if (!isset($categories[1]))
-        return ['err' => 'یکی از فیلدهای درس یا استاد به درستی انتخاب نشده است!'];
-
     $result = [];
 
-    foreach ($categories as $category) {
-        switch($category['t']) {
-            case 'cr':
-                $result[DB_ITEM_COURSE_ID] = $category['id'];
-                break;
-            case 'tc':
-                $result[DB_ITEM_TEACHER_ID] = $category['id'];
-                break;
-
-            default:
-                return ['err' => 'یکی از فیلدهای درس یا استاد به درستی انتخاب نشده است!'];
-        }
-    }
+    $result[DB_ITEM_COURSE_ID] = $categories['c'] ?? null;
+    $result[DB_ITEM_TEACHER_ID] = $categories['t'] ?? null;
 
     if(!$result[DB_ITEM_TEACHER_ID])
         return ['err' => 'به نظر می رسد استاد موردنظر به درستی انتخاب نشده است!'];

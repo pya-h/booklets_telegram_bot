@@ -34,6 +34,7 @@ defined('ACTION_DOWNLOAD_SAMPLE') or define('ACTION_DOWNLOAD_SAMPLE', 27);
 
 
 // Inline actions
+defined('IA_CHECK_MEMBERSHIP') or define('IA_CHECK_MEMBERSHIP', 20);
 defined('IA_SHOW_MESSAGE') or define('IA_SHOW_MESSAGE', 1);
 defined('IA_REPLY_MESSAGE') or define('IA_REPLY_MESSAGE', 2);
 defined('IA_LIST_FAVORITES') or define('IA_LIST_FAVORITES', 3);
@@ -50,3 +51,7 @@ defined('IA_EDIT_BOOKLET_CAPTION') or define('IA_EDIT_BOOKLET_CAPTION', 13);
 defined('IA_EDIT_BOOKLET_FILE') or define('IA_EDIT_BOOKLET_FILE', 14);
 defined('IA_SELECT_TEACHER_OPTIONS') or define('IA_SELECT_TEACHER_OPTIONS', 15);
 defined('IA_SET_CAPTION') or define('IA_SET_CAPTION', 16);
+
+// extra
+defined('IAX_ADD_TO_FAVORITES') or define('IAX_ADD_TO_FAVORITES', 4);
+defined('IAX_REMOVE_FROM_FAVORITES') or define('IAX_REMOVE_FROM_FAVORITES', -4);

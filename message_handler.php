@@ -51,7 +51,7 @@ function handleCasualMessage(&$update)
                             KEYBOARD,
                             [
                                 INLINE_KEYBOARD => [
-                                    [[TEXT_TAG => 'پاسخ', CALLBACK_DATA => jsonifyCallbackData(IA_REPLY_MESSAGE, ['msg' => $message_id])]],
+                                    [[TEXT_TAG => 'پاسخ', CALLBACK_DATA => jsonifyCallbackData(IA_REPLY_MESSAGE, ['m' => $message_id])]],
                                 ],
                             ]
                         );
@@ -85,7 +85,7 @@ function handleCasualMessage(&$update)
                                 [
                                     [
                                         TEXT_TAG => 'مشاهده',
-                                        CALLBACK_DATA => jsonifyCallbackData(IA_SHOW_MESSAGE, ['msg' => $message_id, 'fc' => $chat_id, 'r2m' => $msg[DB_ITEM_ID]]),
+                                        CALLBACK_DATA => jsonifyCallbackData(IA_SHOW_MESSAGE, ['m' => $message_id, 'fc' => $chat_id, 'r2' => $msg[DB_ITEM_ID]]),
                                     ],
                                 ],
                             ],
@@ -108,7 +108,7 @@ function handleCasualMessage(&$update)
                     $keyboard = createClassifyByMenu(
                         $user_id,
                         $categories,
-                        createCallbackData(IA_LIST_BOOKLETS, ['t' => 'tc', 'id' => $params[1]], ['t' => 'cr', 'id' => $params[2]])
+                        createCallbackData(IA_LIST_BOOKLETS, ['e' => 't', 'id' => $params[1]], ['e' => 'c', 'id' => $params[2]])
                     );
 
                 } else
@@ -150,7 +150,7 @@ function handleCasualMessage(&$update)
                 $orderBy = $data == CMD_DOWNLOAD_BY_COURSE ? ORDER_BY_NAME : ORDER_BY_MOST_DOWNLOADED_COURSE;
                 if (setActionAndCache($user_id, ACTION_DOWNLOAD_BOOKLET, $orderBy)) {
                     $response = "درس مورد نظر خود را از لیست زیر انتخاب کنید:";
-                    $keyboard = createCategoricalMenu(DB_TABLE_COURSES, null, null, null, $orderBy);
+                    $keyboard = createCategoricalMenu(IA_LIST_BOOKLETS, DB_TABLE_COURSES, null, false, $orderBy);
                 } else {
                     $response = 'خطای غیرمنتظره پیش آمد! دوباره تلاش کنید!';
                     resetAction($user_id);
@@ -161,7 +161,7 @@ function handleCasualMessage(&$update)
                 $orderBy = $data == CMD_DOWNLOAD_BY_TEACHER ? ORDER_BY_NAME : ORDER_BY_MOST_DOWNLOADED_TEACHER;
                 if (setActionAndCache($user_id, ACTION_DOWNLOAD_BOOKLET, $orderBy)) {
                     $response = "استاد مورد نظر خود را از لیست زیر انتخاب کنید:";
-                    $keyboard = createCategoricalMenu(DB_TABLE_TEACHERS, null, null, null, $orderBy);
+                    $keyboard = createCategoricalMenu(IA_LIST_BOOKLETS, DB_TABLE_TEACHERS, null, false, $orderBy);
                 } else {
                     $response = 'خطای غیرمنتظره پیش آمد! دوباره تلاش کنید!';
                     resetAction($user_id);
@@ -199,7 +199,6 @@ function handleCasualMessage(&$update)
                         'id' => $id,
                     ],
                 ]);
-                break;
                 break;
             case CMD_FAVORITES:
                 $favs = getFavoritesList($user_id);
@@ -318,7 +317,7 @@ function handleCasualMessage(&$update)
                             $keyboard = createCategoricalMenu(IA_SELECT_TEACHER_OPTIONS, DB_TABLE_TEACHERS, null, false, ORDER_BY_NAME, fn ($id) => [
                                 'a' => IA_SELECT_TEACHER_OPTIONS,
                                 'p' => [
-                                    'op' => $data !== CMD_TEACHER_INTRODUCTION ? 'link' : 'int',
+                                    'op' => $data !== CMD_TEACHER_INTRODUCTION ? 'lnk' : 'int',
                                     'id' => $id,
                                 ],
                             ]);
@@ -358,8 +357,8 @@ function handleCasualMessage(&$update)
                                     INLINE_KEYBOARD => [
                                         [
                                             //columns:
-                                            [TEXT_TAG => 'کپشن فایل', CALLBACK_DATA => jsonifyCallbackData(IA_SET_CAPTION, ['t' => 'bk', 'def' => true])],
-                                            [TEXT_TAG => 'وارد کردن کپشن', CALLBACK_DATA => jsonifyCallbackData(IA_SET_CAPTION, ['t' => 'bk', 'def' => false])],
+                                            [TEXT_TAG => 'کپشن فایل', CALLBACK_DATA => jsonifyCallbackData(IA_SET_CAPTION, ['e' => 'b', 'def' => true])],
+                                            [TEXT_TAG => 'وارد کردن کپشن', CALLBACK_DATA => jsonifyCallbackData(IA_SET_CAPTION, ['e' => 'b', 'def' => false])],
                                         ],
                                     ],
                                 ];
@@ -388,8 +387,8 @@ function handleCasualMessage(&$update)
                                     INLINE_KEYBOARD => [
                                         [
                                             //columns:
-                                            [TEXT_TAG => 'کپشن فایل', CALLBACK_DATA => jsonifyCallbackData(IA_SET_CAPTION, ['t' => 'sm', 'def' => true])],
-                                            [TEXT_TAG => 'وارد کردن کپشن', CALLBACK_DATA => jsonifyCallbackData(IA_SET_CAPTION, ['t' => 'sm', 'def' => false])],
+                                            [TEXT_TAG => 'کپشن فایل', CALLBACK_DATA => jsonifyCallbackData(IA_SET_CAPTION, ['e' => 'sm', 'def' => true])],
+                                            [TEXT_TAG => 'وارد کردن کپشن', CALLBACK_DATA => jsonifyCallbackData(IA_SET_CAPTION, ['e' => 'sm', 'def' => false])],
                                         ],
                                     ],
                                 ];
