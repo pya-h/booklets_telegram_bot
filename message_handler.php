@@ -108,7 +108,7 @@ function handleCasualMessage(&$update)
                     $keyboard = createClassifyByMenu(
                         $user_id,
                         $categories,
-                        createCallbackData(IA_LIST_BOOKLETS, ['e' => 't', 'id' => $params[1]], ['e' => 'c', 'id' => $params[2]])
+                        createCallbackData(IA_LIST_BOOKLETS, ['t' => $params[1]], ['c' => $params[2]])
                     );
 
                 } else
@@ -178,7 +178,7 @@ function handleCasualMessage(&$update)
                 break;
             case CMD_MESSAGE_TO_TEACHER:
                 if (updateAction($user_id, ACTION_SELECT_TEACHER_TO_CONTACT)) {
-                    $keyboard = createUsersMenu(DB_USER_MODE . '=' . TEACHER_USER . ' AND ' . DB_ITEM_TEACHER_ID . ' IS NOT NULL', DB_ITEM_TEACHER_ID);
+                    $keyboard = createUsersMenu(IA_CONTACT_TEACHER, DB_USER_MODE . '=' . TEACHER_USER . ' AND ' . DB_ITEM_TEACHER_ID . ' IS NOT NULL', DB_ITEM_TEACHER_ID);
                     if ($keyboard) {
                         $response = 'استادهای زیر در بات فعال هستند و می توانید به آن ها پیام دهید:';
                     } else {
@@ -316,7 +316,7 @@ function handleCasualMessage(&$update)
                             $response = "استاد مورد نظر خود را از لیست زیر انتخاب کنید:";
                             $keyboard = createCategoricalMenu(IA_SELECT_TEACHER_OPTIONS, DB_TABLE_TEACHERS, null, false, ORDER_BY_NAME, fn ($id) => [
                                 'a' => IA_SELECT_TEACHER_OPTIONS,
-                                'p' => [
+                                'd' => [
                                     'op' => $data !== CMD_TEACHER_INTRODUCTION ? 'lnk' : 'int',
                                     'id' => $id,
                                 ],

@@ -23,8 +23,6 @@ function handleCallbackQuery(&$update)
     $data = $callback_data['d'] ?? null;
     switch ($action) {
         case IA_LIST_BOOKLETS:
-            if (($answer = validateCategoricalCallbackData($data, 1, 'c', 't')) !== null)
-                break;
             if (!isset($data['t']) || !isset($data['c'])) {
                 $answer = isset($data['c']) ? 'از بین اساتید ارائه کننده این درس استاد مورد نظر خود را انتخاب کنید:'
                     : 'از بین درس های ارایه شده توسط استاد یکی را انتخاب کنید:';
@@ -78,8 +76,6 @@ function handleCallbackQuery(&$update)
 
         case IA_GET_BOOKLET:
         case IA_GET_SAMPLE:
-            if (($answer = validateCategoricalCallbackData($data, 2, 'c', 't')) !== null)
-                break;
             $downloads = 0;
 
             if ($action === IA_GET_BOOKLET) {
@@ -119,9 +115,6 @@ function handleCallbackQuery(&$update)
             resetAction($user_id);
             break;
         case IA_LIST_FAVORITES:
-            if (($answer = validateInlineData($data, 'pg')) !== null)
-                break;
-
             $favs = getFavoritesList($user_id);
             $page = $data['pg'];
             $keyboard_options = array();
@@ -141,10 +134,6 @@ function handleCallbackQuery(&$update)
         case IA_EDIT_BOOKLET_FILE:
             if (!isSuperior($user)) {
                 $answer = 'شما اجازه انجام چنین کاری را ندارید!';
-                break;
-            }
-
-            if (($answer = validateCategoricalCallbackData($data, 1, 'c', 't')) !== null) {
                 break;
             }
 
@@ -233,8 +222,6 @@ function handleCallbackQuery(&$update)
             }
             break;
         case IA_SET_CAPTION:
-            if (($answer = validateCategoricalCallbackData($data, 1, 'b', 's')) !== null)
-                break;
             $use_file_caption = $data['def'] ?? false;
             $is_booklet = $data['e'] !== 's'; // for sample key 's' is set
             $file_category_name = $is_booklet ? 'جزوه' : 'نمونه سوال';
@@ -309,41 +296,29 @@ function handleCallbackQuery(&$update)
 
         case IA_SHOW_MESSAGE:
             // user wants to see fc message
-            // if data is invalid: show the validation error message
-            if (($answer = validateInlineData($data, 'm', 'fc', 'r2')) !== null) {
-                callMethod(
-                    'answerCallbackQuery',
-                    'callback_query_id',
-                    $callback_id,
-                    TEXT_TAG,
-                    $answer,
-                    'show_alert',
-                    true
-                );
-            } else {
-                callMethod(
-                    METH_COPY_MESSAGE,
-                    MESSAGE_ID_TAG,
-                    $data['m'],
-                    CHAT_ID,
-                    $chat_id,
-                    'from_chat_id',
-                    $data['fc'],
-                    'reply_to_message_id',
-                    $data['r2']
-                );
-                callMethod(
-                    METH_DELETE_MESSAGE,
-                    MESSAGE_ID_TAG,
-                    $message_id,
-                    CHAT_ID,
-                    $chat_id
-                ); // remove the show message box
-            }
+
+            callMethod(
+                METH_COPY_MESSAGE,
+                MESSAGE_ID_TAG,
+                $data['m'],
+                CHAT_ID,
+                $chat_id,
+                'from_chat_id',
+                $data['fc'],
+                'reply_to_message_id',
+                $data['r2']
+            );
+            callMethod(
+                METH_DELETE_MESSAGE,
+                MESSAGE_ID_TAG,
+                $message_id,
+                CHAT_ID,
+                $chat_id
+            ); // remove the show message box
+
             exit(); // I did this because we dont want to edit this message an drmeove the "SHOW" button!
-        // Removing that button will deny any possible chance to retrieve the message
+
         case IA_REPLY_MESSAGE:
-            $answer = validateInlineData($data, 'm');
             if (!$answer) {
                 // user is attempting to answer a message
                 if (setActionAndCache($user_id, ACTION_WRITE_REPLY_TO_USER, $data['m'])) {
@@ -388,8 +363,6 @@ function handleCallbackQuery(&$update)
         case IA_DOWNGRADE_ADMIN:
             // TODO: Check What piece of codes are using this? Is teacher downgrading TA, or admin downgrading teacher with this?
             if (isSuperior($user)) {
-                if (($answer = validateInlineData($data, 'u')) !== null)
-                    break;
 
                 if (downgradeUser($data['u']))
                     $answer = 'کاربر موردنظر به دسترسی عادی بازگشت!';
@@ -401,10 +374,8 @@ function handleCallbackQuery(&$update)
             break;
 
         case IA_CONTACT_TEACHER:
-            if (($answer = validateInlineData($data, 't')) !== null)
-                break;
 
-            if (setActionAndCache($user_id, ACTION_WRITE_MESSAGE, $data['t'])) {
+            if (setActionAndCache($user_id, ACTION_WRITE_MESSAGE, $data['u'])) {
                 $answer = 'متن خود را در قالب یک پیام ارسال کنید.📝';
                 callMethod(
                     METH_SEND_MESSAGE,
@@ -429,9 +400,6 @@ function handleCallbackQuery(&$update)
             }
             break;
         case IA_SELECT_TEACHER_OPTIONS:
-            if (($answer = validateInlineData($data, 'op', 'id')) !== null) {
-                break;
-            }
             switch ($data['op']) {
                 case 'lnk':
                     if (!isSuperior($user)) {
@@ -464,9 +432,7 @@ function handleCallbackQuery(&$update)
             break;
 
         case IA_REMOVE_TA:
-            if (($answer = validateInlineData($data, 'u')) !== null)
-                break;
-            else if (!isset($data['u'])) {
+            if (!isset($data['u'])) {
                 $answer = 'مشکلی در روند حذف TA موردنظر پیش آمد. لطفا دوباره تلاش کنید و در صورت مواجهه مجدد با این پیام مشکل را با واحد پشتیبانی در میان بگذارید.';
                 break;
             }
