@@ -226,13 +226,13 @@ function handleCallbackQuery(&$update)
             $is_booklet = $data['e'] !== 's'; // for sample key 's' is set
             $file_category_name = $is_booklet ? 'جزوه' : 'نمونه سوال';
 
-            if ($use_file_caption) {
+            if (!$use_file_caption) {
                 $answer = 'کپشن موردنظرتو وارد کن:';
                 break;
             }
             $answer = $is_booklet ? backupBooklet($user) : backupSample($user);
 
-            if (!$answer) {
+            if ($answer) {
                 resetAction($user_id);
                 break;
             }
