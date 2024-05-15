@@ -32,25 +32,28 @@ function addSample(&$user, array &$file): array
     return $categories;
 }
 
-function backupSample($sample_id, ?string $new_title = null): ?string
+function backupSample(&$user, ?string $new_title = null): ?string
 {
     $db = Database::getInstance();
+    $sample_data = json_decode($user[DB_USER_CACHE], true);
+
     $err = '';
     if ($new_title) {
         if (
             !$db->update(
                 'UPDATE ' . DB_TABLE_SAMPLES . ' SET ' . DB_ITEM_NAME . '=:title WHERE ' . DB_ITEM_ID . '=:id',
-                array('id' => $sample_id, 'title' => $new_title)
+                array('id' => $sample_data[DB_ITEM_ID], 'title' => $new_title)
             )
         )
             $err .= 'تغییر کپشن ناموفق بود!';
     }
     $sample = $db->query(
         'SELECT * FROM ' . DB_TABLE_SAMPLES . ' WHERE ' . DB_ITEM_ID  . '=:id LIMIT 1',
-        array('id' => $sample_id)
+        array('id' => $sample_data[DB_ITEM_ID])
     );
     if (isset($sample[0])) {
         // send to channel
+        updateAction($user[DB_ITEM_ID], ACTION_SENDING_SAMPLE_FILE);
         callMethod(
             'send' . ucfirst($sample[0][DB_ITEM_FILE_TYPE]),
             CHAT_ID,
@@ -72,6 +75,7 @@ function getSamples($course_id, $sample_id = null, bool $increaseDownloads = fal
     $db = Database::getInstance();
     if ($increaseDownloads)
         $db->update('UPDATE ' . DB_TABLE_SAMPLES . ' SET ' . DB_ITEM_DOWNLOADS . '=' . DB_ITEM_DOWNLOADS . " + 1 WHERE $filter");
+
     return $db->query(
         'SELECT ' . DB_TABLE_SAMPLES . '.*,' . DB_TABLE_COURSES . '.' . DB_ITEM_NAME . ' as course FROM ' . DB_TABLE_SAMPLES . ' JOIN ' . DB_TABLE_COURSES .
             ' ON ' . DB_TABLE_COURSES . '.' . DB_ITEM_ID . '=' . DB_ITEM_COURSE_ID . " WHERE $filter"

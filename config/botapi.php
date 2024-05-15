@@ -43,13 +43,13 @@ defined('METH_GET_CHAT_MEMBER') or define('METH_GET_CHAT_MEMBER', 'getChatMember
 // BOT SPECIFIC CONSTANTS
 defined('URL_BASE') or define('URL_BASE', "https://api.telegram.org/bot" . TOKEN . "/");
 
-defined('BACKUP_CHANNEL_ID') or define('BACKUP_CHANNEL_ID', -1001724496283);
+defined('BACKUP_CHANNEL_ID') or define('BACKUP_CHANNEL_ID', -1002073799554);
 
-defined('FIRST_2_JOIN_CHANNEL_URL') or define('FIRST_2_JOIN_CHANNEL_URL', 'https://t.me/persian_collegee');
-defined('FIRST_2_JOIN_CHANNEL_ID') or define('FIRST_2_JOIN_CHANNEL_ID', -1001903402454);
+defined('FIRST_2_JOIN_CHANNEL_URL') or define('FIRST_2_JOIN_CHANNEL_URL', 'https://t.me/pybutechan');
+defined('FIRST_2_JOIN_CHANNEL_ID') or define('FIRST_2_JOIN_CHANNEL_ID', -1002073799554);
 
-defined('SECOND_2_JOIN_CHANNEL_URL') or define('SECOND_2_JOIN_CHANNEL_URL', 'https://t.me/Persian_project');
-defined('SECOND_2_JOIN_CHANNEL_ID') or define('SECOND_2_JOIN_CHANNEL_ID', -1001648749488);
+defined('SECOND_2_JOIN_CHANNEL_URL') or define('SECOND_2_JOIN_CHANNEL_URL', 'https://t.me/+xOSqZmrHI-llYWQ0');
+defined('SECOND_2_JOIN_CHANNEL_ID') or define('SECOND_2_JOIN_CHANNEL_ID', -1001530157258);
 
 defined('PERSIAN_COLLEGE_BOT_LINK') or define('PERSIAN_COLLEGE_BOT_LINK', 'https://t.me/Persian_collegebot');
 defined('PERSIAN_COLLEGE_YOUTRUBE_LINK') or define('PERSIAN_COLLEGE_YOUTRUBE_LINK', 'https://youtube.com/@Persian_College?sub_confirmation=1');

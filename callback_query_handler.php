@@ -88,7 +88,7 @@ function handleCallbackQuery(&$update)
                 $get_caption = fn(array $item) => $item[DB_BOOKLETS_INDEX] . ': ' . $item[DB_BOOKLETS_CAPTION];
                 $answer = "جزوه (ها)ی انتخابی درس $course - استاد $teacher:\n";
             } else {
-                $choice = $data['s'];
+                $choice = $data['sm'];
                 $course_id = $data['c'] ?? null;
                 $items = getSamples($course_id, $choice, true);
                 $course = $items[0]['course'] ?? null;
@@ -223,7 +223,7 @@ function handleCallbackQuery(&$update)
             break;
         case IA_SET_CAPTION:
             $use_file_caption = $data['def'] ?? false;
-            $is_booklet = $data['e'] !== 's'; // for sample key 's' is set
+            $is_booklet = $data['e'] !== 'sm'; // for sample key 's' is set
             $file_category_name = $is_booklet ? 'جزوه' : 'نمونه سوال';
 
             if (!$use_file_caption) {
@@ -257,13 +257,13 @@ function handleCallbackQuery(&$update)
                 $answer = 'شما اجازه انجام چنین کاری را ندارید!';
                 break;
             }
-            if (!isset($data['e']) || $data['e'] !== 'c' || !isset($data['id']) || $data['id'] < 0) {
+            if (!isset($data['c']) || $data['c'] < 0) {
                 $answer = '.برای آپلود نمونه سوال باید درس مربوطه از منو انتخاب شود. متاسفانه شما این مرحله را به درستی طی نکرده اید. لطفا دوباره تلاش کنید..';
                 break;
             }
 
             $answer = 'نمونه سوال مورد نظر خود را همراه با کپشن بفرست:';
-            $sample_data = [DB_ITEM_COURSE_ID => $data['id']];
+            $sample_data = [DB_ITEM_COURSE_ID => $data['c']];
             if (!setActionAndCache($user_id, ACTION_SENDING_SAMPLE_FILE, json_encode($sample_data))) {
                 $answer = 'مشکلی حین ورود به حالت آپلود نمونه سوال پیش آمد! لحظاتی دیگر دوباره تلاش کنید...';
             }
@@ -282,7 +282,7 @@ function handleCallbackQuery(&$update)
             }
             // if there is some booklets
             $answer = 'نمونه سوال موردنظر خود را از لیست زیر انتخاب کن:';
-            $keyboard = createSamplesMenu(IA_GET_SAMPLE, $samples);
+            $keyboard = createSamplesMenu(IA_GET_SAMPLE, $samples, $data['c']);
             if (isSuperior($user)) {
                 $downloads = 0;
                 foreach ($samples as &$sample) {

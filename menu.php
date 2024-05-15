@@ -159,9 +159,9 @@ function createSessionsMenu(int $action, array &$booklets, array $categories, bo
     return array(INLINE_KEYBOARD => $options);
 }
 
-function createSamplesMenu(int $action, array &$samples): ?array
+function createSamplesMenu(int $action, array &$samples, $course_id): ?array
 {
-    $createCallbackData = fn($id) => ['a' => $action, 'd' => ['e' => 'sm', 'id' => $id]];
+    $createCallbackData = fn($id) => ['a' => $action, 'd' => ['sm' => $id, 'c' => $course_id]];
 
     $options = alignButtons($samples, DB_ITEM_NAME, $createCallbackData);
     if (!$options)
