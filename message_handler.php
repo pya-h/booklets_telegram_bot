@@ -293,6 +293,10 @@ function handleCasualMessage(&$update)
                             $response = 'بسیار خب! نوع ویرایش را انتخاب کنید.';
                             $keyboard = backToMainMenuKeyboard([CMD_EDIT_BOOKLET_CAPTION, CMD_EDIT_BOOKLET_FILE, CMD_TEACHER_INTRODUCTION]);
                             break;
+                        case CMD_ADD_ENTITY:
+                            $keyboard = getAddEntityOptions();
+                            $response = 'چه چیزی میخواهید اضافه کنید؟';
+                            break;
                         case CMD_ADD_COURSE:
                             if (updateAction($user_id, ACTION_ADD_COURSE)) {
                                 $response = 'عنوان درس جدید رو وارد کنید:';

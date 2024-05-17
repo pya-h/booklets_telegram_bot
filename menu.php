@@ -181,16 +181,16 @@ function getMainMenu(int $user_mode): array
         'one_time_keyboard' => false,
         'keyboard' => $user_mode == ADMIN_USER || $user_mode == GOD_USER ?
             [ // admin or god
-                [CMD_DOWNLOAD_BOOKLET, CMD_DOWNLOAD_SAMPLE, CMD_UPLOAD], // casual keyboard
-                [CMD_ADD_COURSE, CMD_EDIT_BOOKLET, CMD_ADD_TEACHER],
+                [CMD_EDIT_BOOKLET, CMD_ADD_ENTITY, CMD_UPLOAD],
+                [CMD_DOWNLOAD_BOOKLET, CMD_DOWNLOAD_SAMPLE], // casual keyboard
                 [CMD_MESSAGE_TO_TEACHER, CMD_TEACHER_BIOS],
                 [CMD_LINK_TEACHER, CMD_SEND_POST_TO_CHANNEL, CMD_NOTIFICATION],
                 [CMD_FAVORITES, CMD_STATISTICS]
             ]
             : [ // teacher, ta, normal user
-                [CMD_DOWNLOAD_SAMPLE, CMD_TEACHER_BIOS, CMD_DOWNLOAD_BOOKLET],
-                [CMD_FAVORITES],
-                [CMD_MESSAGE_TO_TEACHER, CMD_MESSAGE_TO_ADMIN]
+                [CMD_DOWNLOAD_SAMPLE, CMD_DOWNLOAD_BOOKLET],
+                [CMD_MESSAGE_TO_ADMIN, CMD_FAVORITES],
+                [CMD_MESSAGE_TO_TEACHER, CMD_TEACHER_BIOS]
             ]
     );
 
@@ -214,6 +214,19 @@ function backToMainMenuKeyboard(?array $other_options = null): array
         array_unshift($keyboard['keyboard'], $other_options);
 
     return $keyboard;
+}
+
+function getAddEntityOptions(): array
+{
+    return array(
+        'resize_keyboard' => true,
+        'one_time_keyboard' => false,
+        'keyboard' => [
+            [CMD_ADD_TEACHER, CMD_ADD_COURSE],
+            [CMD_ADD_CATEGORY, CMD_ADD_AUTHOR],
+            [CMD_MAIN_MENU]
+        ]
+    );
 }
 
 function getDownloadOptions(): array
