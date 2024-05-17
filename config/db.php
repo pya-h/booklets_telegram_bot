@@ -29,8 +29,8 @@ defined('DB_USER_ACTION') or define('DB_USER_ACTION','action');
 defined('DB_USER_MODE') or define('DB_USER_MODE','mode');
 defined('DB_USER_CACHE') or define('DB_USER_CACHE','action_cache');
 
-// database table: teacher fields
-defined('DB_TEACHER_BIO') or define('DB_TEACHER_BIO', 'bio');
+// database table: teacher/author fields
+defined('DB_ITEM_BIO') or define('DB_ITEM_BIO', 'bio');
 
 //database table:booklets fields
 defined('DB_BOOKLETS_CAPTION') or define('DB_BOOKLETS_CAPTION','caption');
@@ -40,6 +40,11 @@ defined('DB_BOOKLETS_INDEX') or define('DB_BOOKLETS_INDEX','index_name');
 defined('DB_MESSAGES_SENDER_ID') or define('DB_MESSAGES_SENDER_ID','sender_id');
 defined('DB_MESSAGES_ANSWERED') or define('DB_MESSAGES_ANSWERED','answered');
 defined('DB_MESSAGES_TARGET_GROUP') or define('DB_MESSAGES_TARGET_GROUP','target');
+
+
+//database table:category fields
+defined('DB_CATEGORY_PARENT_ID') or define('DB_CATEGORY_PARENT_ID','parent_id'); // used for sub categories, null for main categories
+
 
 defined('MAX_GODS') or define('MAX_GODS', 3);
 

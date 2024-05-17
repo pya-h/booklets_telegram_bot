@@ -423,7 +423,7 @@ function handleCallbackQuery(&$update)
                     }
                     break;
                 case 'bio':
-                    $answer = getTeachersField($data['id'], DB_TEACHER_BIO);
+                    $answer = getTeachersField($data['id'], DB_ITEM_BIO);
                     break;
                 default:
                     $answer = 'گزینه انتخاب شده حاوی داده اشتباه است. لطفا مجددا از نو تلاش کنید...';

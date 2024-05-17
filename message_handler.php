@@ -298,17 +298,29 @@ function handleCasualMessage(&$update)
                             $response = 'چه چیزی میخواهید اضافه کنید؟';
                             break;
                         case CMD_ADD_COURSE:
-                            if (updateAction($user_id, ACTION_ADD_COURSE)) {
-                                $response = 'عنوان درس جدید رو وارد کنید:';
-                                $keyboard = backToMainMenuKeyboard();
-                            } else {
-                                $response = 'خطایی غیرمنتظره اتفاق افتاد. لطفا دوباره تلاش کنید!';
-                                resetAction($user_id);
-                            }
-                            break;
                         case CMD_ADD_TEACHER:
-                            if (updateAction($user_id, ACTION_ADD_TEACHER)) {
-                                $response = 'اسم کامل استاد جدید رو وارد کنید:';
+                        case CMD_ADD_CATEGORY:
+                        case CMD_ADD_AUTHOR:
+                            $entity = [
+                                CMD_ADD_COURSE => [
+                                    'a' => ACTION_ADD_COURSE,
+                                    't' => 'درس'
+                                ],
+                                CMD_ADD_TEACHER => [
+                                    'a' => ACTION_ADD_TEACHER,
+                                    't' => 'استاد'
+                                ],
+                                CMD_ADD_CATEGORY => [
+                                    'a' => ACTION_ADD_CATEGORY,
+                                    't' => 'کتگوری'
+                                ],
+                                CMD_ADD_AUTHOR => [
+                                    'a' => ACTION_ADD_AUTHOR,
+                                    't' => 'نویسنده'
+                                ]
+                            ][$data];
+                            if (updateAction($user_id, $entity['a'])) {
+                                $response = 'نام ' . $entity['t'] . ' جدید رو وارد کنید:';
                                 $keyboard = backToMainMenuKeyboard();
                             } else {
                                 $response = 'خطایی غیرمنتظره اتفاق افتاد. لطفا دوباره تلاش کنید!';

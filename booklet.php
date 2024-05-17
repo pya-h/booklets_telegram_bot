@@ -148,7 +148,7 @@ function getBooklets($teacher_id, $course_id, $booklet_id=null, bool $increaseDo
 
 function introduceTeacher($teacher_id, ?string $bio = null)
 {
-    return Database::getInstance()->update('UPDATE ' . DB_TABLE_TEACHERS . " SET " . DB_TEACHER_BIO . "=:bio WHERE " . DB_ITEM_ID . '=:teacher_id',
+    return Database::getInstance()->update('UPDATE ' . DB_TABLE_TEACHERS . " SET " . DB_ITEM_BIO . "=:bio WHERE " . DB_ITEM_ID . '=:teacher_id',
         array('teacher_id' => $teacher_id, 'bio' => $bio));
 }
 
