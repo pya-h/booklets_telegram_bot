@@ -183,7 +183,6 @@ function handleCasualMessage(&$update)
                 break;
             case CMD_MESSAGE_TO_TEACHER:
                 $keyboard = createUsersMenu(IA_CONTACT_TEACHER, DB_USER_MODE . '=' . TEACHER_USER . ' AND ' . DB_ITEM_TEACHER_ID . ' IS NOT NULL', DB_ITEM_TEACHER_ID);
-                logText(json_encode($keyboard));
                 if ($keyboard) {
                     $response = 'استادهای زیر در بات فعال هستند و می توانید به آن ها پیام دهید:';
                 } else {
@@ -375,8 +374,8 @@ function handleCasualMessage(&$update)
                                     INLINE_KEYBOARD => [
                                         [
                                             //columns:
-                                            [TEXT_TAG => 'کپشن فایل', CALLBACK_DATA => jsonifyCallbackData(IA_SET_CAPTION, ['e' => 'b', 'def' => true])],
-                                            [TEXT_TAG => 'وارد کردن کپشن', CALLBACK_DATA => jsonifyCallbackData(IA_SET_CAPTION, ['e' => 'b', 'def' => false])],
+                                            [TEXT_TAG => 'کپشن فایل', CALLBACK_DATA => jsonifyCallbackData(IA_SET_CAPTION, ['e' => 'blt', 'def' => true])],
+                                            [TEXT_TAG => 'وارد کردن کپشن', CALLBACK_DATA => jsonifyCallbackData(IA_SET_CAPTION, ['e' => 'blt', 'def' => false])],
                                         ],
                                     ],
                                 ];

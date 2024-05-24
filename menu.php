@@ -136,7 +136,7 @@ function createSessionsMenu(int $action, array &$booklets, array $categories, bo
         'd' => [
             't' => $categories[DB_ITEM_TEACHER_ID],
             'c' => $categories[DB_ITEM_COURSE_ID],
-            'b' => $id
+            'blt' => $id
         ],
         'x' => $categories['options']
     ];

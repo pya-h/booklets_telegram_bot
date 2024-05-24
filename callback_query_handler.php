@@ -79,7 +79,7 @@ function handleCallbackQuery(&$update)
             $downloads = 0;
 
             if ($action === IA_GET_BOOKLET) {
-                $choice = $data['b'];
+                $choice = $data['blt'];
                 $course_id = $data['c'] ?? null;
                 $teacher_id = $data['t'] ?? null;
                 $items = getBooklets($teacher_id, $course_id, $choice, true);
@@ -138,7 +138,7 @@ function handleCallbackQuery(&$update)
 
             if (!isset($data['t']) || !isset($data['c'])) {
                 $keyboard = createCategoricalMenu($action, null, $data, $action !== IA_UPLOAD_BOOKLET);
-                $answer = $data['e'] === 'c' ? 'از بین اساتید ارائه کننده این درس استاد مورد نظر خود را انتخاب کنید:'
+                $answer = isset($data['c']) ? 'از بین اساتید ارائه کننده این درس استاد مورد نظر خود را انتخاب کنید:'
                     : 'از بین درس های ارایه شده توسط استاد یکی را انتخاب کنید:';
 
             } else if ($action === IA_UPLOAD_BOOKLET) {
@@ -171,7 +171,7 @@ function handleCallbackQuery(&$update)
                 }
                 $answer = 'مشکلی حین ثبت اطلاعات پیش آمده. لطفا از اول تلاش کن :|';
             } else {
-                if (!isset($data['b'])) {
+                if (!isset($data['blt'])) {
                     // it's on the Categorized by menu:
                     $categories = extractCategories($data, $extra);
                     if (isset($categories['err'])) {
@@ -198,18 +198,18 @@ function handleCallbackQuery(&$update)
                         $keyboard = createClassifyByMenu($user_id, $categories, $callback_data);
                     }
                 } else {
-                    $booklets = Database::getInstance()->query('SELECT * FROM ' . DB_TABLE_BOOKLETS . ' WHERE ' . $data . ' LIMIT 1');
+                    $booklets = Database::getInstance()->query('SELECT * FROM ' . DB_TABLE_BOOKLETS . ' WHERE ' . DB_ITEM_ID .'=' . $data['blt'] . ' LIMIT 1');
                     if ($booklets && count($booklets)) {
                         if ($action == IA_EDIT_BOOKLET_CAPTION) {
                             $answer = "کپشن کنونی:\n" . $booklets[0][DB_BOOKLETS_INDEX] . ': ' . $booklets[0][DB_BOOKLETS_CAPTION] . "\n\nکپشن جدید را وارد کنید:";
-                            if (!setActionAndCache($user_id, ACTION_SET_BOOKLET_CAPTION, $booklets[0][DB_ITEM_ID])) {
+                            if (!setActionAndCache($user_id, ACTION_SET_BOOKLET_CAPTION, json_encode([DB_ITEM_ID => $booklets[0][DB_ITEM_ID]]))) {
                                 $answer = 'حین ورود به حالت ویرایش کپشن مشکلی پیش آمد. لطفا لحظاتی بعد دوباره تلاش کنید!';
                                 resetAction($user_id);
                             }
                         } else {
                             // file edit
                             $answer = 'فایل جدید را ارسال کنید:';
-                            if (!setActionAndCache($user_id, ACTION_EDIT_BOOKLET_FILE, $booklets[0][DB_ITEM_ID])) {
+                            if (!setActionAndCache($user_id, ACTION_EDIT_BOOKLET_FILE, json_encode([DB_ITEM_ID => $booklets[0][DB_ITEM_ID]]))) {
                                 $answer = 'حین ورود به حالت ویرایش فایل مشکلی پیش آمد. لطفا لحظاتی بعد دوباره تلاش کنید!';
                                 resetAction($user_id);
                             }
