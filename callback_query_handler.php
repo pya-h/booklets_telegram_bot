@@ -137,7 +137,7 @@ function handleCallbackQuery(&$update)
             }
 
             if (!isset($data['t']) || !isset($data['c'])) {
-                $keyboard = createCategoricalMenu(IA_UPLOAD_BOOKLET, null, $data, $action !== IA_UPLOAD_BOOKLET);
+                $keyboard = createCategoricalMenu($action, null, $data, $action !== IA_UPLOAD_BOOKLET);
                 $answer = $data['e'] === 'c' ? 'از بین اساتید ارائه کننده این درس استاد مورد نظر خود را انتخاب کنید:'
                     : 'از بین درس های ارایه شده توسط استاد یکی را انتخاب کنید:';
 
@@ -405,7 +405,7 @@ function handleCallbackQuery(&$update)
                         break;
                     }
                     $answer = 'یوزرنیم استاد مورد نظر را وارد کنید یا یک پیام از او داخل ربات فوروارد کنید:';
-                    if (!setActionAndCache($user_id, ACTION_LINK_TEACHER, $data['id'])) {
+                    if (!setActionAndCache($user_id, ACTION_LINK_TEACHER, $data['t'])) {
                         $answer = 'مشکلی حین ورود به حالت لینک اکانت استاد پیش آمد. لطفا لحظاتی بعد دوباره تلاش کنید!';
                     }
                     break;
@@ -415,13 +415,13 @@ function handleCallbackQuery(&$update)
                         break;
                     }
                     $answer = "حالا متن معرفی استاد رو تایپ کنید. همچنین میتونی داخل متن لینک ویدیو هم قرار بدی. \n درصورتی که میخواهید معرفی نامه استاد را حذف کنید کافی ست کاراکتر خط تیره `-` را ارسال کنید.";
-                    if (!setActionAndCache($user_id, ACTION_INTRODUCE_TEACHER, $data['id'])) {
+                    if (!setActionAndCache($user_id, ACTION_INTRODUCE_TEACHER, $data['t'])) {
                         $answer = 'حین ورود به حالت دریافت متن معرفی مشکل پیش آمد. لطفا لحظاتی بعد دوباره تلاش کنید!';
                         resetAction($user_id);
                     }
                     break;
                 case 'bio':
-                    $answer = getTeachersField($data['id'], DB_ITEM_BIO);
+                    $answer = getTeachersField($data['t'], DB_ITEM_BIO) ?? 'هیچ معارفه ای برای این استاد ارائه نشده است.';
                     break;
                 default:
                     $answer = 'گزینه انتخاب شده حاوی داده اشتباه است. لطفا مجددا از نو تلاش کنید...';

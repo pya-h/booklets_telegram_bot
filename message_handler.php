@@ -59,7 +59,7 @@ function handleCasualMessage(&$update)
                     $response = "پیام شما با موفقیت ارسال شد✅ \n در صورت لزوم، $group_name پاسخ را از طریق همین بات به شما اعلام خواهد کرد.";
                     resetAction($user_id);
                 } else if ($user[DB_USER_ACTION] == ACTION_WRITE_REPLY_TO_USER && $user[DB_USER_MODE] != NORMAL_USER) {
-                    if(!($msg = getMessage($user[DB_USER_CACHE]))) {
+                    if (!($msg = getMessage($user[DB_USER_CACHE]))) {
                         $response = 'چنین پیامی در دیتابیس وجود ندارد و امکان پاسخ دهی به آن نیست!';
                         break;
                     }
@@ -110,7 +110,6 @@ function handleCasualMessage(&$update)
                         $categories,
                         createCallbackData(IA_LIST_BOOKLETS, ['t' => $params[1], 'c' => $params[2]])
                     );
-
                 } else
                     $response = handleGospel($user, $data);
 
@@ -148,18 +147,28 @@ function handleCasualMessage(&$update)
             case CMD_DOWNLOAD_BY_COURSE:
             case CMD_DOWNLOAD_BY_MOST_DOWNLOADED_COURSE:
                 $response = "درس مورد نظر خود را از لیست زیر انتخاب کنید:";
-                $keyboard = createCategoricalMenu(IA_LIST_BOOKLETS, DB_TABLE_COURSES, null, false, 
-                    $data == CMD_DOWNLOAD_BY_COURSE ? ORDER_BY_NAME : ORDER_BY_MOST_DOWNLOADED_COURSE);
-                if(!$keyboard) {
+                $keyboard = createCategoricalMenu(
+                    IA_LIST_BOOKLETS,
+                    DB_TABLE_COURSES,
+                    null,
+                    false,
+                    $data == CMD_DOWNLOAD_BY_COURSE ? ORDER_BY_NAME : ORDER_BY_MOST_DOWNLOADED_COURSE
+                );
+                if (!$keyboard) {
                     $response = 'در حال حاضر هیچ عنوان درسی ای در ربات ثبت نشده است.';
                 }
                 break;
             case CMD_DOWNLOAD_BY_TEACHER:
             case CMD_DOWNLOAD_BY_MOST_DOWNLOADED_TEACHER:
                 $response = "استاد مورد نظر خود را از لیست زیر انتخاب کنید:";
-                $keyboard = createCategoricalMenu(IA_LIST_BOOKLETS, DB_TABLE_TEACHERS, null, false, 
-                    $data == CMD_DOWNLOAD_BY_TEACHER ? ORDER_BY_NAME : ORDER_BY_MOST_DOWNLOADED_TEACHER);
-                if(!$keyboard) {
+                $keyboard = createCategoricalMenu(
+                    IA_LIST_BOOKLETS,
+                    DB_TABLE_TEACHERS,
+                    null,
+                    false,
+                    $data == CMD_DOWNLOAD_BY_TEACHER ? ORDER_BY_NAME : ORDER_BY_MOST_DOWNLOADED_TEACHER
+                );
+                if (!$keyboard) {
                     $response = 'در حال حاضر نام هیچ استادی در ربات ثبت نشده است.';
                 }
                 break;
@@ -183,14 +192,14 @@ function handleCasualMessage(&$update)
                 break;
             case CMD_TEACHER_BIOS:
                 $response = "شما می توانید معرفی نامه هر یک از اساتید زیر را با کلیک روی اسم وی مشاهده کنید.";
-                $keyboard = createCategoricalMenu(IA_SELECT_TEACHER_OPTIONS, DB_TABLE_TEACHERS, null, false, ORDER_BY_NAME, fn ($id) => [
-                    'a' => IA_SELECT_TEACHER_OPTIONS,
-                    'p' => [
+                $keyboard = createCategoricalMenu(IA_SELECT_TEACHER_OPTIONS, DB_TABLE_TEACHERS, null, false, ORDER_BY_NAME, fn ($id) => createCallbackData(
+                    IA_SELECT_TEACHER_OPTIONS,
+                    [
                         'op' => 'bio',
-                        'id' => $id,
-                    ],
-                ]);
-                if(!$keyboard) {
+                        't' => $id,
+                    ]
+                ));
+                if (!$keyboard) {
                     $response = 'در حال حاضر بیوگرافی هیچ استادی در ربات ثبت نشده است.!';
                 }
                 break;
@@ -315,13 +324,20 @@ function handleCasualMessage(&$update)
                         case CMD_LINK_TEACHER:
                         case CMD_TEACHER_INTRODUCTION:
                             $response = "استاد مورد نظر خود را از لیست زیر انتخاب کنید:";
-                            $keyboard = createCategoricalMenu(IA_SELECT_TEACHER_OPTIONS, DB_TABLE_TEACHERS, null, false, ORDER_BY_NAME, fn ($id) => [
-                                'a' => IA_SELECT_TEACHER_OPTIONS,
-                                'd' => [
-                                    'op' => $data !== CMD_TEACHER_INTRODUCTION ? 'lnk' : 'int',
-                                    'id' => $id,
-                                ],
-                            ]);
+                            $keyboard = createCategoricalMenu(
+                                IA_SELECT_TEACHER_OPTIONS,
+                                DB_TABLE_TEACHERS,
+                                null,
+                                false,
+                                ORDER_BY_NAME,
+                                fn ($id) => createCallbackData(
+                                    IA_SELECT_TEACHER_OPTIONS,
+                                    [
+                                        'op' => $data !== CMD_TEACHER_INTRODUCTION ? 'lnk' : 'int',
+                                        't' => $id,
+                                    ]
+                                )
+                            );
                             break;
                         case CMD_NOTIFICATION:
                             if (updateAction($user_id, ACTION_SEND_NOTIFICATION, true)) {
@@ -581,7 +597,7 @@ function handleCasualMessage(&$update)
                 } else {
                     switch ($data) {
                         case CMD_STATISTICS:
-                            if(!($response = getTeachersFullDownloadStats($user[DB_ITEM_TEACHER_ID]))) {
+                            if (!($response = getTeachersFullDownloadStats($user[DB_ITEM_TEACHER_ID]))) {
                                 $response = 'در حال حاضر هیچ ارائه ای از شما در این ربات وجود ندارد.';
                             }
                             break;
