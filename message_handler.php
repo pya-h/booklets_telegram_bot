@@ -150,12 +150,18 @@ function handleCasualMessage(&$update)
                 $response = "درس مورد نظر خود را از لیست زیر انتخاب کنید:";
                 $keyboard = createCategoricalMenu(IA_LIST_BOOKLETS, DB_TABLE_COURSES, null, false, 
                     $data == CMD_DOWNLOAD_BY_COURSE ? ORDER_BY_NAME : ORDER_BY_MOST_DOWNLOADED_COURSE);
+                if(!$keyboard) {
+                    $response = 'در حال حاضر هیچ عنوان درسی ای در ربات ثبت نشده است.';
+                }
                 break;
             case CMD_DOWNLOAD_BY_TEACHER:
             case CMD_DOWNLOAD_BY_MOST_DOWNLOADED_TEACHER:
                 $response = "استاد مورد نظر خود را از لیست زیر انتخاب کنید:";
                 $keyboard = createCategoricalMenu(IA_LIST_BOOKLETS, DB_TABLE_TEACHERS, null, false, 
                     $data == CMD_DOWNLOAD_BY_TEACHER ? ORDER_BY_NAME : ORDER_BY_MOST_DOWNLOADED_TEACHER);
+                if(!$keyboard) {
+                    $response = 'در حال حاضر نام هیچ استادی در ربات ثبت نشده است.';
+                }
                 break;
             case CMD_MESSAGE_TO_ADMIN:
                 if (updateAction($user_id, ACTION_WRITE_MESSAGE)) {
@@ -184,6 +190,9 @@ function handleCasualMessage(&$update)
                         'id' => $id,
                     ],
                 ]);
+                if(!$keyboard) {
+                    $response = 'در حال حاضر بیوگرافی هیچ استادی در ربات ثبت نشده است.!';
+                }
                 break;
             case CMD_FAVORITES:
                 $favs = getFavoritesList($user_id);
@@ -572,7 +581,9 @@ function handleCasualMessage(&$update)
                 } else {
                     switch ($data) {
                         case CMD_STATISTICS:
-                            $response = getTeachersFullDownloadStats($user[DB_ITEM_TEACHER_ID]);
+                            if(!($response = getTeachersFullDownloadStats($user[DB_ITEM_TEACHER_ID]))) {
+                                $response = 'در حال حاضر هیچ ارائه ای از شما در این ربات وجود ندارد.';
+                            }
                             break;
                         case CMD_INTRODUCE_TA:
                             if (setActionAndCache($user_id, ACTION_ADD_TA, $user[DB_ITEM_TEACHER_ID])) {

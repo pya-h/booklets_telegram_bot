@@ -180,7 +180,7 @@ function getCourseName($course_id)
     return $values[0] ?? null;
 }
 
-function &getTeachersFullDownloadStats($teacher_id): string
+function &getTeachersFullDownloadStats($teacher_id): ?string
 {
     $teachers_booklets = Database::getInstance()->query("SELECT " . DB_ITEM_DOWNLOADS . ", " . DB_ITEM_COURSE_ID . " FROM "
         . DB_TABLE_BOOKLETS . " WHERE " . DB_ITEM_TEACHER_ID . "=$teacher_id");
@@ -194,9 +194,9 @@ function &getTeachersFullDownloadStats($teacher_id): string
         }
         $courses[DB_ITEM_COURSE_ID]['downloads'] += $booklet[DB_ITEM_DOWNLOADS];
     }
-    $stats = "تعداد دانلود جزوات شما:\n\n";
+    $stats = '';
     foreach ($courses as &$course) {
         $stats .= $course['name'] . ": " . $course['downloads'] . "\n";
     }
-    return $stats;
+    return !empty($stats) ? "تعداد دانلود جزوات شما:\n\n$stats" : null;
 }
