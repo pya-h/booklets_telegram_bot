@@ -95,7 +95,7 @@ function handleCallbackQuery(&$update)
                 $get_caption = fn(array $item) => $item[DB_ITEM_NAME];
                 $answer = "نمونه سوالات درس $course:\n";
             }
-            $answer = json_encode($items);
+
             foreach ($items as &$item) {
                 if (isSuperior($user))
                     $downloads += $item[DB_ITEM_DOWNLOADS];
@@ -112,7 +112,6 @@ function handleCallbackQuery(&$update)
             if (isSuperior($user))
                 $answer = appendStatsToMessage($answer, $downloads);
 
-            resetAction($user_id);
             break;
         case IA_LIST_FAVORITES:
             $favs = getFavoritesList($user_id);

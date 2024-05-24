@@ -108,7 +108,7 @@ function handleCasualMessage(&$update)
                     $keyboard = createClassifyByMenu(
                         $user_id,
                         $categories,
-                        createCallbackData(IA_LIST_BOOKLETS, ['t' => $params[1]], ['c' => $params[2]])
+                        createCallbackData(IA_LIST_BOOKLETS, ['t' => $params[1], 'c' => $params[2]])
                     );
 
                 } else
@@ -147,25 +147,15 @@ function handleCasualMessage(&$update)
                 break;
             case CMD_DOWNLOAD_BY_COURSE:
             case CMD_DOWNLOAD_BY_MOST_DOWNLOADED_COURSE:
-                $orderBy = $data == CMD_DOWNLOAD_BY_COURSE ? ORDER_BY_NAME : ORDER_BY_MOST_DOWNLOADED_COURSE;
-                if (setActionAndCache($user_id, ACTION_DOWNLOAD_BOOKLET, $orderBy)) {
-                    $response = "درس مورد نظر خود را از لیست زیر انتخاب کنید:";
-                    $keyboard = createCategoricalMenu(IA_LIST_BOOKLETS, DB_TABLE_COURSES, null, false, $orderBy);
-                } else {
-                    $response = 'خطای غیرمنتظره پیش آمد! دوباره تلاش کنید!';
-                    resetAction($user_id);
-                }
+                $response = "درس مورد نظر خود را از لیست زیر انتخاب کنید:";
+                $keyboard = createCategoricalMenu(IA_LIST_BOOKLETS, DB_TABLE_COURSES, null, false, 
+                    $data == CMD_DOWNLOAD_BY_COURSE ? ORDER_BY_NAME : ORDER_BY_MOST_DOWNLOADED_COURSE);
                 break;
             case CMD_DOWNLOAD_BY_TEACHER:
             case CMD_DOWNLOAD_BY_MOST_DOWNLOADED_TEACHER:
-                $orderBy = $data == CMD_DOWNLOAD_BY_TEACHER ? ORDER_BY_NAME : ORDER_BY_MOST_DOWNLOADED_TEACHER;
-                if (setActionAndCache($user_id, ACTION_DOWNLOAD_BOOKLET, $orderBy)) {
-                    $response = "استاد مورد نظر خود را از لیست زیر انتخاب کنید:";
-                    $keyboard = createCategoricalMenu(IA_LIST_BOOKLETS, DB_TABLE_TEACHERS, null, false, $orderBy);
-                } else {
-                    $response = 'خطای غیرمنتظره پیش آمد! دوباره تلاش کنید!';
-                    resetAction($user_id);
-                }
+                $response = "استاد مورد نظر خود را از لیست زیر انتخاب کنید:";
+                $keyboard = createCategoricalMenu(IA_LIST_BOOKLETS, DB_TABLE_TEACHERS, null, false, 
+                    $data == CMD_DOWNLOAD_BY_TEACHER ? ORDER_BY_NAME : ORDER_BY_MOST_DOWNLOADED_TEACHER);
                 break;
             case CMD_MESSAGE_TO_ADMIN:
                 if (updateAction($user_id, ACTION_WRITE_MESSAGE)) {
@@ -177,17 +167,11 @@ function handleCasualMessage(&$update)
                 }
                 break;
             case CMD_MESSAGE_TO_TEACHER:
-                if (updateAction($user_id, ACTION_SELECT_TEACHER_TO_CONTACT)) {
-                    $keyboard = createUsersMenu(IA_CONTACT_TEACHER, DB_USER_MODE . '=' . TEACHER_USER . ' AND ' . DB_ITEM_TEACHER_ID . ' IS NOT NULL', DB_ITEM_TEACHER_ID);
-                    if ($keyboard) {
-                        $response = 'استادهای زیر در بات فعال هستند و می توانید به آن ها پیام دهید:';
-                    } else {
-                        $response = 'در حال حاضر هیچ استادی در بات فعالیت ندارد!';
-                        resetAction($user_id);
-                    }
+                $keyboard = createUsersMenu(IA_CONTACT_TEACHER, DB_USER_MODE . '=' . TEACHER_USER . ' AND ' . DB_ITEM_TEACHER_ID . ' IS NOT NULL', DB_ITEM_TEACHER_ID);
+                if ($keyboard) {
+                    $response = 'استادهای زیر در بات فعال هستند و می توانید به آن ها پیام دهید:';
                 } else {
-                    $response = 'متاسفانه در حال حاضر ربات قادر به ارسال پیام برای هیچ استادی نیست! لطفا بعدا امتحان کنید.';
-                    resetAction($user_id);
+                    $response = 'در حال حاضر هیچ استادی در بات فعالیت ندارد!';
                 }
                 break;
             case CMD_TEACHER_BIOS:
@@ -235,17 +219,11 @@ function handleCasualMessage(&$update)
                     $response = startUpgradingUser($user_id, $message, ADMIN_USER, 'ادمین');
                     break;
                 } else if ($data === CMD_REMOVE_ADMIN) {
-                    if (updateAction($user_id, ACTION_DOWNGRADE_USER)) {
-                        $keyboard = createUsersMenu(IA_DOWNGRADE_ADMIN, DB_USER_MODE . '=' . ADMIN_USER);
-                        if ($keyboard) {
-                            $response = 'روی شخص موردنظرت کلیک کن تا از حالت ادمین خارج شود:';
-                        } else {
-                            $response = 'هیج ادمینی یافت نشد!';
-                            resetAction($user_id);
-                        }
+                    $keyboard = createUsersMenu(IA_DOWNGRADE_ADMIN, DB_USER_MODE . '=' . ADMIN_USER);
+                    if ($keyboard) {
+                        $response = 'روی شخص موردنظرت کلیک کن تا از حالت ادمین خارج شود:';
                     } else {
-                        $response = 'مشکلی حین ورود به حالت حذف ادمین پیش آمد. لطفا دوباره تلاش کنید!';
-                        resetAction($user_id);
+                        $response = 'هیج ادمینی یافت نشد!';
                     }
                     break;
                 }
@@ -255,10 +233,7 @@ function handleCasualMessage(&$update)
                     // if action value is none
                     switch ($data) {
                         case CMD_UPLOAD:
-                            $keyboard = array(
-                                'resize_keyboard' => true, 'one_time_keyboard' => false,
-                                'keyboard' => [[CMD_UPLOAD_SAMPLE, CMD_UPLOAD_BOOKLET]],
-                            );
+                            $keyboard = backToMainMenuKeyboard([CMD_UPLOAD_SAMPLE, CMD_UPLOAD_BOOKLET]);
                             $response = 'چه چیزی میخواهید آپلود کنید؟';
                             break;
                         case CMD_UPLOAD_BOOKLET:
@@ -368,6 +343,7 @@ function handleCasualMessage(&$update)
                                 break;
                             }
                             if (setActionAndCache($user_id, ACTION_SET_BOOKLET_CAPTION, json_encode($result))) {
+                                // TOCHECK:
                                 $response = 'جزوه مورد نظر با موفقیت ارسال شد. حالا کپشن جزوه را مشخص کنید:';
                                 $keyboard = [
                                     INLINE_KEYBOARD => [
@@ -612,7 +588,6 @@ function handleCasualMessage(&$update)
                                 $response = 'روی شخص موردنظرت کلیک کن تا از لیست TA های شما خارج شود:';
                             } else {
                                 $response = 'شما هنوز هیچ TA ای معرفی نکرده اید!';
-                                resetAction($user_id);
                             }
 
                             break;

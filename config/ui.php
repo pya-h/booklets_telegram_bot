@@ -11,7 +11,7 @@ defined('CMD_GOD_ACCESS') or define('CMD_GOD_ACCESS', '/godAccess');
     defined('CMD_REMOVE_ADMIN') or define('CMD_REMOVE_ADMIN', 'حذف ادمین ❌');
 
     // god & admin options
-    defined('CMD_ADD_ENTITY') or define('CMD_ADD_ENTITY', 'افزودن');
+    defined('CMD_ADD_ENTITY') or define('CMD_ADD_ENTITY', 'افزودن ➕');
     defined('CMD_ADD_COURSE') or define('CMD_ADD_COURSE', 'افزودن درس 📚');
     defined('CMD_ADD_TEACHER') or define('CMD_ADD_TEACHER', 'افزودن استاد 👨‍🏫');
     defined('CMD_ADD_CATEGORY') or define('CMD_ADD_CATEGORY', 'افزودن کتگوری 📚');
