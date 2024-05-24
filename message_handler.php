@@ -168,6 +168,7 @@ function handleCasualMessage(&$update)
                 break;
             case CMD_MESSAGE_TO_TEACHER:
                 $keyboard = createUsersMenu(IA_CONTACT_TEACHER, DB_USER_MODE . '=' . TEACHER_USER . ' AND ' . DB_ITEM_TEACHER_ID . ' IS NOT NULL', DB_ITEM_TEACHER_ID);
+                logText(json_encode($keyboard));
                 if ($keyboard) {
                     $response = 'استادهای زیر در بات فعال هستند و می توانید به آن ها پیام دهید:';
                 } else {

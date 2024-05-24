@@ -122,8 +122,7 @@ function createCategoricalMenu(
 
 function createUsersMenu(int $action, string $filter_query, string $filter_index = DB_ITEM_ID): ?array
 {
-    $fields = implode(',', [DB_ITEM_ID, DB_ITEM_NAME, DB_USER_USERNAME]);
-    $items = Database::getInstance()->query("SELECT $fields FROM " . DB_TABLE_USERS . " WHERE $filter_query ORDER BY " . DB_ITEM_NAME);
+    $items = Database::getInstance()->query("SELECT * FROM " . DB_TABLE_USERS . " WHERE $filter_query ORDER BY " . DB_ITEM_NAME);
     $options = alignButtons($items, DB_ITEM_NAME, fn($id) => ['a' => $action, 'd' => ['u' => $id]], $filter_index, DB_USER_USERNAME);
     return $options ? array(INLINE_KEYBOARD => $options) : null;
 }

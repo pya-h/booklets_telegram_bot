@@ -373,7 +373,6 @@ function handleCallbackQuery(&$update)
             break;
 
         case IA_CONTACT_TEACHER:
-
             if (setActionAndCache($user_id, ACTION_WRITE_MESSAGE, $data['u'])) {
                 $answer = 'متن خود را در قالب یک پیام ارسال کنید.📝';
                 callMethod(
