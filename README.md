@@ -5,7 +5,7 @@
 
 Telegram bot designed for downloading and uploading booklets categorized by teacher and course name.
 
-Running at: https://t.me/Persian_projectbot
+Running at: https://t.me/Persian_collegebot
 
 # Common options that every user has access to:
 1. Download booklets ordered by name and categorized by teacher and courses
