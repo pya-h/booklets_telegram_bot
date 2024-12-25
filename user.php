@@ -1,37 +1,6 @@
 <?php
-require_once './database.php';
-
-// admin actions:
-defined('ACTION_NONE') or define('ACTION_NONE', 0);
-defined('ACTION_DOWNLOAD_BOOKLET') or define('ACTION_DOWNLOAD_BOOKLET', 1);
-defined('ACTION_UPLOAD_BOOKLET') or define('ACTION_UPLOAD_BOOKLET', 2);
-defined('ACTION_SENDING_BOOKLET_FILE') or define('ACTION_SENDING_BOOKLET_FILE', 3);
-defined('ACTION_ADD_COURSE') or define('ACTION_ADD_COURSE', 4);
-defined('ACTION_ADD_TEACHER') or define('ACTION_ADD_TEACHER', 5); // EXTRA ACTION VALUE (TEACHER ID/COURSE_ID/ETC.)
-defined('ACTION_WHISPER_GODS_NAME') or define('ACTION_WHISPER_GODS_NAME', 6);
-defined('ACTION_WHISPER_GODS_SECRET') or define('ACTION_WHISPER_GODS_SECRET', 7);
-defined('ACTION_SELECT_BOOKLET_TO_GET') or define('ACTION_SELECT_BOOKLET_TO_GET', 8);
-defined('ACTION_WRITE_MESSAGE') or define('ACTION_WRITE_MESSAGE', 9);
-defined('ACTION_WRITE_REPLY_TO_USER') or define('ACTION_WRITE_REPLY_TO_USER', 10);
-defined('ACTION_ADD_ADMIN') or define('ACTION_ADD_ADMIN', 11);
-defined('ACTION_DOWNGRADE_USER') or define('ACTION_DOWNGRADE_USER', -1);
-defined('ACTION_ASSIGN_USER_NAME') or define('ACTION_ASSIGN_USER_NAME', 12);
-defined('ACTION_SET_BOOKLET_CAPTION') or define('ACTION_SET_BOOKLET_CAPTION', 13);
-defined('ACTION_EDIT_BOOKLET_CAPTION') or define('ACTION_EDIT_BOOKLET_CAPTION', 14);
-defined('ACTION_SELECT_BOOKLET_TO_EDIT') or define('ACTION_SELECT_BOOKLET_TO_EDIT', 15);
-defined('ACTION_SEND_POST_TO_CHANNEL') or define('ACTION_SEND_POST_TO_CHANNEL', 16);
-defined('ACTION_EDIT_BOOKLET_FILE') or define('ACTION_EDIT_BOOKLET_FILE', 17);
-defined('ACTION_LINK_TEACHER') or define('ACTION_LINK_TEACHER', 18);
-defined('ACTION_SELECT_TEACHER_TO_CONTACT') or define('ACTION_SELECT_TEACHER_TO_CONTACT', 19);
-defined('ACTION_INTRODUCE_TA') or define('ACTION_INTRODUCE_TA', 20);
-defined('ACTION_SEND_NOTIFICATION') or define('ACTION_SEND_NOTIFICATION', 21);
-defined('ACTION_INTRODUCE_TEACHER') or define('ACTION_INTRODUCE_TEACHER', 22);
-defined('ACTION_SEE_TEACHER_BIOS') or define('ACTION_SEE_TEACHER_BIOS', 23);
-defined('ACTION_UPLOAD_SAMPLE') or define('ACTION_UPLOAD_SAMPLE', 24);
-defined('ACTION_SENDING_SAMPLE_FILE') or define('ACTION_SENDING_SAMPLE_FILE', 25);
-defined('ACTION_SET_SAMPLE_TITLE') or define('ACTION_SET_SAMPLE_TITLE', 26);
-defined('ACTION_DOWNLOAD_SAMPLE') or define('ACTION_DOWNLOAD_SAMPLE', 27);
-defined('ACTION_SELECT_SAMPLE_TO_GET') or define('ACTION_SELECT_SAMPLE_TO_GET', 28);
+require_once __DIR__ . '/database.php';
+require_once  __DIR__ . '/config/actions.php';
 
 
 function getSuperiors(): ?array
@@ -39,6 +8,10 @@ function getSuperiors(): ?array
     // get admin and gods
     return Database::getInstance()->query('SELECT * FROM '. DB_TABLE_USERS
         .' WHERE ' . DB_USER_MODE . '=' . GOD_USER . ' OR ' . DB_USER_MODE . '=' . ADMIN_USER);
+}
+
+function isSuperior(&$user): bool {
+    return $user[DB_USER_MODE] == ADMIN_USER || $user[DB_USER_MODE] == GOD_USER;
 }
 
 function getCertainUsers(int $user_mode): ?array {
